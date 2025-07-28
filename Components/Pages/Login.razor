@@ -2,6 +2,70 @@
 
 <PageTitle>Login</PageTitle>
 
+<div class="d-flex flex-column justify-center align-center" style="height: 80vh;">
+    <div class="d-flex flex-column gap-3 pa-4" style="width: 300px;">
+        <MudText Typo="Typo.h5" Class="text-center pb-4">Sign In</MudText>
+        
+        <MudForm @ref="form" @bind-IsValid="isValid" @bind-Errors="errors">
+            <div class="d-flex align-center">
+                <MudTextField @bind-Value="Username"
+                             Label="Username"
+                             Variant="Variant.Outlined"
+                             Required="true"
+                             RequiredError="Please enter your username"
+                             Class="flex-grow-1"
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.Person" />
+            </div>
+            
+            <div class="d-flex align-center">
+                <MudTextField @bind-Value="Password"
+                             Label="Password"
+                             Variant="Variant.Outlined"
+                             Required="true"
+                             RequiredError="Please enter your password"
+                             InputType="InputType.Password"
+                             Class="flex-grow-1"
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.Lock" />
+            </div>
+            
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
+            }
+            
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      FullWidth="true"
+                      Class="mt-4"
+                      Size="Size.Medium"
+                      OnClick="HandleSignIn">
+                Sign In
+            </MudButton>
+        </MudForm>
+    </div>
+</div>
+
 @code {
-  
+    private string Username { get; set; }
+    private string Password { get; set; }
+    private string errorMessage = string.Empty;
+    private MudForm form;
+    private bool isValid;
+    private string[] errors;
+    
+    private async Task HandleSignIn()
+    {
+        await form.Validate();
+        
+        if (!isValid)
+        {
+            errorMessage = "Please fill out all required fields";
+            return;
+        }
+        
+        errorMessage = string.Empty;
+        // Add your sign in logic here
+    }
 }
