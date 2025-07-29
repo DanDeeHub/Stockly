@@ -25,11 +25,8 @@
         <MudNavLink Href="ClosingInventory" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Lock">Closing Shift</MudNavLink>
     }
     
-
-    
     <!-- Products - Available to all authenticated users -->
     <MudNavLink Href="Products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.List">Products</MudNavLink>
-    
     
     <div style="margin-top: auto;">
         @if (UserState.IsAuthenticated)
@@ -46,12 +43,8 @@
                         Are you sure?
                     </MudText>
                     <div class="d-flex gap-1">
-                        <MudButton OnClick="CancelLogout" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small" FullWidth="true">
-                            Cancel
-                        </MudButton>
-                        <MudButton OnClick="ConfirmLogout" Color="Color.Error" Variant="Variant.Filled" Size="Size.Small" FullWidth="true">
-                            Logout
-                        </MudButton>
+                        <MudButton OnClick="CancelLogout" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small" FullWidth="true">Cancel</MudButton>
+                        <MudButton OnClick="ConfirmLogout" Color="Color.Error" Variant="Variant.Filled" Size="Size.Small" FullWidth="true">Logout</MudButton>
                     </div>
                 </div>
             }
@@ -93,7 +86,7 @@
     {
         showLogoutConfirm = false;
         UserState.Logout();
-        DrawerService.Close(); // Collapse drawer on logout
+        DrawerService.Close();
         Navigation.NavigateTo("/Login");
     }
     

@@ -4,7 +4,6 @@
 @inject UserStateService UserState
 @inject NavigationManager Navigation
 
-
 <PageTitle>Login</PageTitle>
 
 <div class="d-flex flex-column justify-center align-center" style="height: 80vh;">
@@ -13,26 +12,11 @@
         
         <MudForm @ref="form" @bind-IsValid="isValid" @bind-Errors="errors">
             <div class="d-flex align-center">
-                <MudTextField @bind-Value="Username"
-                             Label="Username"
-                             Variant="Variant.Outlined"
-                             Required="true"
-                             RequiredError="Please enter your username"
-                             Class="flex-grow-1"
-                             Adornment="Adornment.Start"
-                             AdornmentIcon="@Icons.Material.Filled.Person" />
+                <MudTextField @bind-Value="Username" Label="Username" Variant="Variant.Outlined" Required="true" RequiredError="Please enter your username" Class="flex-grow-1" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person" />
             </div>
             
             <div class="d-flex align-center">
-                <MudTextField @bind-Value="Password"
-                             Label="Password"
-                             Variant="Variant.Outlined"
-                             Required="true"
-                             RequiredError="Please enter your password"
-                             InputType="InputType.Password"
-                             Class="flex-grow-1"
-                             Adornment="Adornment.Start"
-                             AdornmentIcon="@Icons.Material.Filled.Lock" />
+                <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" Required="true" RequiredError="Please enter your password" InputType="InputType.Password" Class="flex-grow-1" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
             </div>
             
             @if (!string.IsNullOrEmpty(errorMessage))
@@ -40,13 +24,7 @@
                 <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
             }
             
-            <MudButton Variant="Variant.Filled" 
-                      Color="Color.Primary" 
-                      FullWidth="true"
-                      Class="mt-4"
-                      Size="Size.Medium"
-                      OnClick="HandleSignIn"
-                      Disabled="@isLoading">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" Size="Size.Medium" OnClick="HandleSignIn" Disabled="@isLoading">
                 @if (isLoading)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" />
@@ -57,8 +35,6 @@
                     <span>Sign In</span>
                 }
             </MudButton>
-            
-
         </MudForm>
     </div>
 </div>
@@ -74,7 +50,6 @@
     
     protected override void OnInitialized()
     {
-        // If user is already logged in, redirect to home
         if (UserState.IsAuthenticated)
         {
             Navigation.NavigateTo("/");
@@ -96,18 +71,15 @@
         
         try
         {
-            // Authenticate user with Firebase
             var user = await FirebaseService.AuthenticateUserAsync(Username, Password);
             
             if (user != null)
             {
-                // Login successful
                 UserState.Login(user);
                 Navigation.NavigateTo("/");
             }
             else
             {
-                // Login failed
                 errorMessage = "Invalid username or password";
             }
         }
@@ -121,8 +93,4 @@
             isLoading = false;
         }
     }
-    
-
-    
-
 }

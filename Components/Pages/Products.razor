@@ -1,7 +1,192 @@
 ﻿@page "/Products"
+@using Stockly.Services
 
 <PageTitle>Products</PageTitle>
 
+<AuthorizedPageBase PageName="Products">
+    <div class="pa-2 pa-sm-4">
+        <!-- Header with Buttons -->
+        <div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-3 mb-sm-6">
+            <MudText Typo="Typo.h4" Class="mb-2 mb-sm-0">Products</MudText>
+            
+            <div class="d-flex gap-1 gap-sm-2 flex-wrap">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Upload" Size="Size.Small" Style="height: 40px; min-width: 80px; max-width: 120px;">Import</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small" Style="height: 40px; min-width: 80px; max-width: 120px;">Export</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" Style="height: 40px; min-width: 100px; max-width: 140px;" OnClick="OpenAddProductDialog">Add Product</MudButton>
+            </div>
+        </div>
+        
+        <!-- Search and Filter Section -->
+        <MudCard Elevation="0" Class="mb-3 mb-sm-4">
+            <MudCardContent Class="pa-2 pa-sm-4">
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="9">
+                        <MudTextField @bind-Value="searchString" Placeholder="Search products or categories..." Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Size="Size.Small" Style="height: 40px;" />
+                    </MudItem>
+                    
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FilterList" Size="Size.Small" Style="height: 40px;" FullWidth="true">Filter</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+        
+        <!-- Products Table -->
+        <MudCard Elevation="0">
+            <MudCardContent Class="pa-2 pa-sm-4">
+                <MudTable Items="@FilteredProducts" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Product Name</MudTh>
+                        <MudTh>Category</MudTh>
+                        <MudTh>Stock</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Price</MudTh>
+                        <MudTh>Action</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Name</MudTd>
+                        <MudTd>@context.Category</MudTd>
+                        <MudTd>@context.Stock</MudTd>
+                        <MudTd><MudText Color="@context.StatusColor" Typo="Typo.body2">@context.Status</MudText></MudTd>
+                        <MudTd>$@context.Price.ToString("N0")</MudTd>
+                        <MudTd>
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                                <MudMenuItem OnClick="@(() => ViewProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Visibility" Class="mr-2" />View Details</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => EditProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />Edit</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => DeleteProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-2" />Delete</MudMenuItem>
+                            </MudMenu>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent><MudTablePager /></PagerContent>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+    </div>
+    
+    <!-- Add Product Modal -->
+    @if (isAddProductDialogOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+            <MudCard Style="width: 95%; max-width: 400px; max-height: 85vh; overflow-y: auto; margin: 0 auto;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative;" Class="pa-2 pa-sm-4">
+                    <MudText Typo="Typo.h6">Add New Product</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                  OnClick="CloseModal" 
+                                  Size="Size.Small" 
+                                  Color="Color.Inherit"
+                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                </MudCardHeader>
+                
+                <MudCardContent Class="pa-2 pa-sm-4">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="newProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="newProduct.Category" Label="Category" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="newProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="newProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="$" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect @bind-Value="newProduct.Status" Label="Status" Variant="Variant.Outlined" Required="true">
+                                <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
+                                <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
+                                <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                
+                <MudCardActions Class="justify-start pa-2 pa-sm-4">
+                    <MudButton OnClick="CloseModal" Variant="Variant.Text" Class="mr-2">Cancel</MudButton>
+                    <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary">Save Product</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudOverlay>
+    }
+</AuthorizedPageBase>
+
 @code {
- 
+    private string searchString = "";
+    private bool isAddProductDialogOpen = false;
+    private Product newProduct = new();
+
+    private List<Product> products = new()
+    {
+        new Product { Name = "PixelMate", Category = "Electronics", Stock = 595, Status = "In stock", StatusColor = Color.Success, Price = 4347 },
+        new Product { Name = "FusionLink", Category = "Electronics", Stock = 761, Status = "In stock", StatusColor = Color.Success, Price = 5347 },
+        new Product { Name = "VelvetAura", Category = "Apparel", Stock = 765, Status = "Out of stock", StatusColor = Color.Error, Price = 2347 },
+        new Product { Name = "UrbanFlex Sneakers", Category = "Apparel", Stock = 65, Status = "Low stock", StatusColor = Color.Warning, Price = 9347 },
+        new Product { Name = "SilkSage Wrap", Category = "Wellness", Stock = 165, Status = "In stock", StatusColor = Color.Success, Price = 4347 },
+        new Product { Name = "CasaLuxe", Category = "Home & Living", Stock = 575, Status = "Low stock", StatusColor = Color.Warning, Price = 3347 },
+        new Product { Name = "TechFlow Pro", Category = "Electronics", Stock = 890, Status = "In stock", StatusColor = Color.Success, Price = 6547 },
+        new Product { Name = "EcoFresh", Category = "Wellness", Stock = 0, Status = "Out of stock", StatusColor = Color.Error, Price = 1847 },
+        new Product { Name = "LuxeComfort", Category = "Home & Living", Stock = 45, Status = "Low stock", StatusColor = Color.Warning, Price = 7247 },
+        new Product { Name = "SportFlex Elite", Category = "Apparel", Stock = 678, Status = "In stock", StatusColor = Color.Success, Price = 3947 },
+    };
+
+    private List<Product> FilteredProducts => products
+        .Where(product => string.IsNullOrEmpty(searchString) || 
+                        product.Name.ToLower().Contains(searchString.ToLower()) ||
+                        product.Category.ToLower().Contains(searchString.ToLower()))
+        .ToList();
+
+    private void ViewProduct(Product product)
+    {
+        // TODO: Implement view product functionality
+    }
+
+    private void EditProduct(Product product)
+    {
+        // TODO: Implement edit product functionality
+    }
+
+    private void DeleteProduct(Product product)
+    {
+        // TODO: Implement delete product functionality
+    }
+
+    private void OpenAddProductDialog()
+    {
+        newProduct = new Product();
+        isAddProductDialogOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isAddProductDialogOpen = false;
+        StateHasChanged();
+    }
+
+    private void SaveProduct()
+    {
+        if (!string.IsNullOrEmpty(newProduct.Name) && !string.IsNullOrEmpty(newProduct.Category))
+        {
+            newProduct.StatusColor = newProduct.Status switch
+            {
+                "In stock" => Color.Success,
+                "Low stock" => Color.Warning,
+                "Out of stock" => Color.Error,
+                _ => Color.Default
+            };
+            
+            products.Add(newProduct);
+            isAddProductDialogOpen = false;
+            StateHasChanged();
+        }
+    }
+
+    public class Product
+    {
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public int Stock { get; set; }
+        public string Status { get; set; } = "";
+        public Color StatusColor { get; set; }
+        public decimal Price { get; set; }
+    }
 }

@@ -10,11 +10,7 @@
 
 <MudLayout>
     <MudAppBar Elevation="0">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" 
-                      Color="Color.Inherit" 
-                      Edge="Edge.Start" 
-                      OnClick="@((e) => DrawerService.Toggle())" 
-                      Disabled="@(!UserState.IsAuthenticated)" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerService.Toggle())" Disabled="@(!UserState.IsAuthenticated)" />
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <MudSpacer />
         <MudText Typo="Typo.caption">Hello, @(string.IsNullOrEmpty(UserState.Username) ? "Guest" : UserState.Username)</MudText>
@@ -57,7 +53,6 @@
         UserState.OnChange += OnUserStateChanged;
         DrawerService.OnChange += StateHasChanged;
         
-        // Ensure drawer starts closed
         DrawerService.Close();
     }
 
@@ -81,8 +76,6 @@
         {
             DrawerService.Close();
         }
-        // Don't automatically open drawer when user is authenticated
-        // Let user control it manually via the menu button
     }
 
     public void Dispose()
@@ -90,8 +83,6 @@
         UserState.OnChange -= OnUserStateChanged;
         DrawerService.OnChange -= StateHasChanged;
     }
-
-
 
     private void DarkModeToggle()
     {
