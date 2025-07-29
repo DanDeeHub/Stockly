@@ -31,7 +31,27 @@
     <div style="margin-top: auto;">
         @if (UserState.IsAuthenticated)
         {
-            <MudNavLink OnClick="HandleLogout" Icon="@Icons.Material.Outlined.Logout">Logout</MudNavLink>
+            @if (!showLogoutConfirm)
+            {
+                <MudNavLink OnClick="HandleLogout" Icon="@Icons.Material.Outlined.Logout">Logout</MudNavLink>
+            }
+            else
+            {
+                <div class="pa-3">
+                    <MudText Typo="Typo.body2" Color="Color.Warning" Class="mb-2 d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+                        Are you sure?
+                    </MudText>
+                    <div class="d-flex gap-1">
+                        <MudButton OnClick="CancelLogout" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small" FullWidth="true">
+                            Cancel
+                        </MudButton>
+                        <MudButton OnClick="ConfirmLogout" Color="Color.Error" Variant="Variant.Filled" Size="Size.Small" FullWidth="true">
+                            Logout
+                        </MudButton>
+                    </div>
+                </div>
+            }
         }
         else
         {
@@ -59,10 +79,23 @@
         UserState.OnChange -= StateHasChanged;
     }
 
+    private bool showLogoutConfirm = false;
+    
     private void HandleLogout()
     {
+        showLogoutConfirm = true;
+    }
+    
+    private void ConfirmLogout()
+    {
+        showLogoutConfirm = false;
         UserState.Logout();
         DrawerService.Close(); // Collapse drawer on logout
         Navigation.NavigateTo("/Login");
+    }
+    
+    private void CancelLogout()
+    {
+        showLogoutConfirm = false;
     }
 }
