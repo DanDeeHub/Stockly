@@ -1,9 +1,32 @@
 ﻿@page "/"
+@using Stockly.Services
+@inject UserStateService UserState
+@inject NavigationManager Navigation
 
 <PageTitle>Home</PageTitle>
 
+@if (!UserState.IsAuthenticated)
+{
+    <div class="d-flex justify-center align-center" style="height: 100vh;">
+        <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+    </div>
+}
+else
+{
+    <div class="pa-4">
+        <MudText Typo="Typo.h4" Class="mb-4">Welcome to Stockly</MudText>
+        <MudText Typo="Typo.body1">
+            Your inventory management system is ready to use.
+        </MudText>
+    </div>
+}
+
 @code {
-
-    
-
+    protected override void OnInitialized()
+    {
+        if (!UserState.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/Login");
+        }
+    }
 }

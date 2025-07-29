@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @using Stockly.Services
 @inject UserStateService UserState
+@inject DrawerService DrawerService
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -9,16 +10,23 @@
 
 <MudLayout>
     <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                      Color="Color.Inherit" 
+                      Edge="Edge.Start" 
+                      OnClick="@((e) => DrawerService.Toggle())" 
+                      Disabled="@(!UserState.IsAuthenticated)" />
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <MudSpacer />
         <MudText Typo="Typo.caption">Hello, @(string.IsNullOrEmpty(UserState.Username) ? "Guest" : UserState.Username)</MudText>
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+    <MudDrawer @bind-Open="DrawerService.IsOpen" Elevation="2">
         <MudDrawerHeader>
             <MudText Typo="Typo.h5" Class="mt-1">Stockly</MudText>
         </MudDrawerHeader>
-        <NavMenu />
+        @if (UserState.IsAuthenticated)
+        {
+            <NavMenu />
+        }
     </MudDrawer>
     <MudMainContent>
        @Body
@@ -32,7 +40,6 @@
 </div>
 
 @code {
-    private bool _drawerOpen = true;
     private bool _isDarkMode = true;
     private MudTheme? _theme = null;
 
@@ -47,18 +54,43 @@
             LayoutProperties = new LayoutProperties()
         };
         
-        UserState.OnChange += StateHasChanged;
+        UserState.OnChange += OnUserStateChanged;
+        DrawerService.OnChange += StateHasChanged;
+    }
+
+    private void OnUserStateChanged()
+    {
+        UpdateDrawerState();
+        StateHasChanged();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            UpdateDrawerState();
+        }
+    }
+
+    private void UpdateDrawerState()
+    {
+        if (!UserState.IsAuthenticated)
+        {
+            DrawerService.Close();
+        }
+        else
+        {
+            DrawerService.Open();
+        }
     }
 
     public void Dispose()
     {
-        UserState.OnChange -= StateHasChanged;
+        UserState.OnChange -= OnUserStateChanged;
+        DrawerService.OnChange -= StateHasChanged;
     }
 
-    private void DrawerToggle()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
+
 
     private void DarkModeToggle()
     {

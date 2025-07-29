@@ -1,6 +1,7 @@
 ﻿@using Stockly.Services
 @inject UserStateService UserState
 @inject NavigationManager Navigation
+@inject DrawerService DrawerService
 
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Home">Home</MudNavLink>
@@ -43,6 +44,7 @@
     private void HandleLogout()
     {
         UserState.Logout();
+        DrawerService.Close(); // Collapse drawer on logout
         Navigation.NavigateTo("/Login");
     }
 }

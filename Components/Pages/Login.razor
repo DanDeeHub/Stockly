@@ -71,6 +71,15 @@
     private string[] errors;
     private bool isLoading = false;
     
+    protected override void OnInitialized()
+    {
+        // If user is already logged in, redirect to home
+        if (UserState.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+    
     private async Task HandleSignIn()
     {
         await form.Validate();

@@ -11,6 +11,7 @@ builder.Services.AddMudServices();
 // Add custom services
 builder.Services.AddScoped<FirebaseService>();
 builder.Services.AddScoped<UserStateService>();
+builder.Services.AddScoped<DrawerService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
