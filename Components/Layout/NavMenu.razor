@@ -1,4 +1,11 @@
-﻿<MudNavMenu>
+﻿@using Stockly.Services
+@inject UserStateService UserState
+@inject NavigationManager Navigation
+
+<MudNavMenu>
+    <MudText Typo="Typo.h6" Class="ml-2">
+        Hello, @(string.IsNullOrEmpty(UserState.Username) ? "Guest" : UserState.Username)
+    </MudText>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Home">Home</MudNavLink>
     <MudNavLink Href="AdminView" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.SupervisedUserCircle">Admin</MudNavLink>
     <MudNavLink Href="OpeningInventory" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.LockOpen">Opening Shift</MudNavLink>
@@ -6,7 +13,14 @@
     <MudNavLink Href="Products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.List">Products</MudNavLink>
     
     <div style="margin-top: auto;">
-        <MudNavLink Href="Login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Logout">Logout</MudNavLink>
+        @if (UserState.IsAuthenticated)
+        {
+            <MudNavLink OnClick="HandleLogout" Icon="@Icons.Material.Outlined.Logout">Logout</MudNavLink>
+        }
+        else
+        {
+            <MudNavLink Href="Login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.Login">Login</MudNavLink>
+        }
     </div>
 </MudNavMenu>
 
@@ -17,3 +31,21 @@
         height: 100%;
     }
 </style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        UserState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        UserState.OnChange -= StateHasChanged;
+    }
+
+    private void HandleLogout()
+    {
+        UserState.Logout();
+        Navigation.NavigateTo("/Login");
+    }
+}

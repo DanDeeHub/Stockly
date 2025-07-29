@@ -1,10 +1,15 @@
 using MudBlazor.Services;
 using Stockly.Components;
+using Stockly.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
+
+// Add custom services
+builder.Services.AddScoped<FirebaseService>();
+builder.Services.AddScoped<UserStateService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -21,7 +26,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 
 app.UseAntiforgery();
 

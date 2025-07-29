@@ -1,4 +1,8 @@
 ﻿@page "/Login"
+@using Stockly.Services
+@inject FirebaseService FirebaseService
+@inject UserStateService UserState
+@inject NavigationManager Navigation
 
 <PageTitle>Login</PageTitle>
 
@@ -40,9 +44,20 @@
                       FullWidth="true"
                       Class="mt-4"
                       Size="Size.Medium"
-                      OnClick="HandleSignIn">
-                Sign In
+                      OnClick="HandleSignIn"
+                      Disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <span class="ml-2">Signing In...</span>
+                }
+                else
+                {
+                    <span>Sign In</span>
+                }
             </MudButton>
+            
+
         </MudForm>
     </div>
 </div>
@@ -54,6 +69,7 @@
     private MudForm form;
     private bool isValid;
     private string[] errors;
+    private bool isLoading = false;
     
     private async Task HandleSignIn()
     {
@@ -66,6 +82,35 @@
         }
         
         errorMessage = string.Empty;
-        // Add your sign in logic here
+        isLoading = true;
+        
+        try
+        {
+            // Authenticate user with Firebase
+            var user = await FirebaseService.AuthenticateUserAsync(Username, Password);
+            
+            if (user != null)
+            {
+                // Login successful
+                UserState.Login(user);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                // Login failed
+                errorMessage = "Invalid username or password";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred during sign in. Please try again.";
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
+    
+
 }
