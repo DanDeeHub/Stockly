@@ -4,10 +4,28 @@
 @inject DrawerService DrawerService
 
 <MudNavMenu>
+    <!-- Home - Available to all authenticated users -->
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Home">Home</MudNavLink>
-    <MudNavLink Href="AdminView" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.SupervisedUserCircle">Admin</MudNavLink>
-    <MudNavLink Href="OpeningInventory" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.LockOpen">Opening Shift</MudNavLink>
-    <MudNavLink Href="ClosingInventory" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Lock">Closing Shift</MudNavLink>
+    
+    <!-- Admin View - Only for admin role -->
+    @if (UserState.Role == "admin")
+    {
+        <MudNavLink Href="AdminView" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.SupervisedUserCircle">Admin</MudNavLink>
+    }
+    
+    <!-- Opening Inventory - Only for opening and admin roles -->
+    @if (UserState.Role == "opening" || UserState.Role == "admin")
+    {
+        <MudNavLink Href="OpeningInventory" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.LockOpen">Opening Shift</MudNavLink>
+    }
+    
+    <!-- Closing Inventory - Only for closing and admin roles -->
+    @if (UserState.Role == "closing" || UserState.Role == "admin")
+    {
+        <MudNavLink Href="ClosingInventory" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Lock">Closing Shift</MudNavLink>
+    }
+    
+    <!-- Products - Available to all authenticated users -->
     <MudNavLink Href="Products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.List">Products</MudNavLink>
     
     <div style="margin-top: auto;">

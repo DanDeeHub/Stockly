@@ -2,6 +2,40 @@
 
 <PageTitle>Opening Inventory</PageTitle>
 
-@code {
-    
-}
+<AuthorizedPageBase PageName="OpeningInventory">
+    <div class="pa-4">
+        <MudText Typo="Typo.h4" Class="mb-4">Opening Shift Inventory</MudText>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            Manage opening shift inventory and stock counts.
+        </MudText>
+        
+        <MudGrid Class="mt-4">
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Stock Count</MudText>
+                        <MudText Typo="Typo.body2">Record opening stock levels</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Inventory Check</MudText>
+                        <MudText Typo="Typo.body2">Verify inventory accuracy</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Reports</MudText>
+                        <MudText Typo="Typo.body2">View opening shift reports</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </div>
+</AuthorizedPageBase>

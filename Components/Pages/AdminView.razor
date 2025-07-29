@@ -2,6 +2,40 @@
 
 <PageTitle>Admin View</PageTitle>
 
-@code {
-    
-}
+<AuthorizedPageBase PageName="AdminView">
+    <div class="pa-4">
+        <MudText Typo="Typo.h4" Class="mb-4">Admin Dashboard</MudText>
+        <MudText Typo="Typo.body1">
+            Welcome to the admin dashboard. You have access to all system features.
+        </MudText>
+        
+        <MudGrid Class="mt-4">
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">User Management</MudText>
+                        <MudText Typo="Typo.body2">Manage system users and roles</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">System Settings</MudText>
+                        <MudText Typo="Typo.body2">Configure system parameters</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Reports</MudText>
+                        <MudText Typo="Typo.body2">View system reports and analytics</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </div>
+</AuthorizedPageBase>

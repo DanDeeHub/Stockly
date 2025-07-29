@@ -2,6 +2,40 @@
 
 <PageTitle>Closing Inventory</PageTitle>
 
-@code {
-    
-}
+<AuthorizedPageBase PageName="ClosingInventory">
+    <div class="pa-4">
+        <MudText Typo="Typo.h4" Class="mb-4">Closing Shift Inventory</MudText>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            Manage closing shift inventory and final stock counts.
+        </MudText>
+        
+        <MudGrid Class="mt-4">
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Final Count</MudText>
+                        <MudText Typo="Typo.body2">Record closing stock levels</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Inventory Audit</MudText>
+                        <MudText Typo="Typo.body2">Audit inventory discrepancies</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Reports</MudText>
+                        <MudText Typo="Typo.body2">View closing shift reports</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </div>
+</AuthorizedPageBase>

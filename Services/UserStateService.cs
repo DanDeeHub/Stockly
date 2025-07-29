@@ -22,10 +22,11 @@ namespace Stockly.Services
 
         public event Action? OnChange;
 
-        public void Login(User user)
-        {
-            CurrentUser = user;
-        }
+                            public void Login(User user)
+                    {
+                        CurrentUser = user;
+                        Console.WriteLine($"User logged in: {user.Username}, Role: '{user.Role}'");
+                    }
 
         public void Logout()
         {

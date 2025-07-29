@@ -62,11 +62,20 @@ namespace Stockly.Services
                 if (userData.ContainsKey("password") && userData["password"].ToString() == password)
                 {
                     Console.WriteLine($"Authentication successful for user: {username}");
+                    
+                    // Debug: Print all user data
+                    Console.WriteLine($"User data: {JsonSerializer.Serialize(userData)}");
+                    
+                    // Handle case where field name might have trailing spaces
+                    var roleKey = userData.Keys.FirstOrDefault(k => k.Trim() == "role");
+                    var role = roleKey != null ? userData[roleKey].ToString() : "user";
+                    Console.WriteLine($"Retrieved role: '{role}'");
+                    
                     return new User
                     {
                         Id = userDoc.Id,
                         Username = userData["username"].ToString(),
-                        Role = userData.ContainsKey("role") ? userData["role"].ToString() : "user",
+                        Role = role,
                         Email = userData.ContainsKey("email") ? userData["email"].ToString() : ""
                     };
                 }
