@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@using Stockly.Services
+@inject UserStateService UserState
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -10,7 +12,7 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <MudSpacer />
-        <MudText Typo="Typo.caption">Hello, AdminJQ</MudText>
+        <MudText Typo="Typo.caption">Hello, @(string.IsNullOrEmpty(UserState.Username) ? "Guest" : UserState.Username)</MudText>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
         <MudDrawerHeader>
@@ -44,6 +46,13 @@
             PaletteDark = _darkPalette,
             LayoutProperties = new LayoutProperties()
         };
+        
+        UserState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        UserState.OnChange -= StateHasChanged;
     }
 
     private void DrawerToggle()
