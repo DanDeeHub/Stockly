@@ -4,6 +4,11 @@ namespace Stockly.Services
     {
         private bool _isOpen = false;
         
+        public DrawerService()
+        {
+            _isOpen = false; // Ensure it starts closed
+        }
+        
         public bool IsOpen
         {
             get => _isOpen;
