@@ -22,6 +22,8 @@ namespace Stockly.Services
             {
                 "home" => true, // Everyone can access home
                 "products" => true, // Everyone can access products
+                "inventory" => true, // Everyone can access inventory
+                "dashboard" => true, // Everyone can access dashboard
                 "adminview" => _userState.Role == "admin",
                 "openinginventory" => _userState.Role == "opening" || _userState.Role == "admin",
                 "closinginventory" => _userState.Role == "closing" || _userState.Role == "admin",

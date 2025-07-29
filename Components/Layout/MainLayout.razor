@@ -9,7 +9,7 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
+    <MudAppBar Elevation="0">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" 
                       Color="Color.Inherit" 
                       Edge="Edge.Start" 
@@ -19,13 +19,13 @@
         <MudSpacer />
         <MudText Typo="Typo.caption">Hello, @(string.IsNullOrEmpty(UserState.Username) ? "Guest" : UserState.Username)</MudText>
     </MudAppBar>
-    <MudDrawer @bind-Open="DrawerService.IsOpen" Elevation="2" Breakpoint="Breakpoint.Md" Variant="DrawerVariant.Temporary">
+    <MudDrawer @bind-Open="DrawerService.IsOpen" Elevation="0" Breakpoint="Breakpoint.Md" Variant="DrawerVariant.Temporary">
         <MudDrawerHeader>
             <MudText Typo="Typo.h5" Class="mt-1">Stockly</MudText>
         </MudDrawerHeader>
         @if (UserState.IsAuthenticated)
         {
-            <NavMenu />
+        <NavMenu />
         }
     </MudDrawer>
     <MudMainContent>
@@ -70,7 +70,7 @@
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
-        {
+    {
             UpdateDrawerState();
         }
     }

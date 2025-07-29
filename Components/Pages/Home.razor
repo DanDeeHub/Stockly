@@ -14,10 +14,190 @@
 else
 {
     <div class="pa-4">
-        <MudText Typo="Typo.h4" Class="mb-4">Welcome to Stockly</MudText>
-        <MudText Typo="Typo.body1">
-            Your inventory management system is ready to use.
-        </MudText>
+        <!-- Header -->
+        <MudText Typo="Typo.h4" Class="mb-6">Dashboard</MudText>
+        
+        <!-- Main Metrics Row -->
+        <MudGrid Class="mb-6">
+            <!-- Left Column: Reminder and Total Asset Value -->
+            <MudItem xs="12" md="6">
+                <MudGrid>
+                    <!-- Reminder Card -->
+                    <MudItem xs="12">
+                        <MudCard Elevation="0" Class="h-100">
+                            <MudCardContent>
+                                <MudText Typo="Typo.h6" Class="mb-3">Reminder</MudText>
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Warning" Class="mr-2" />
+                                    <MudText Typo="Typo.body1">
+                                        Monthly inventory audit due in 5 days
+                                    </MudText>
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    
+                    <!-- Total Asset Value Card -->
+                    <MudItem xs="12">
+                        <MudCard Elevation="0" Class="h-100">
+                            <MudCardContent>
+                                <MudText Typo="Typo.h6" Class="mb-3">Total Asset Value</MudText>
+                                <MudText Typo="Typo.h3" Color="Color.Primary" Class="mb-2">
+                                    $10,356,788
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Total value of all inventory assets
+                                </MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            
+            <!-- Right Column: Product Breakdown Card -->
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="0" Class="h-100">
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6" Class="mb-3">Product</MudText>
+                        <MudText Typo="Typo.h4" Class="mb-4">2379</MudText>
+                        
+                        <!-- Progress Bar for Product Status -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-space-between align-center mb-2">
+                                <MudText Typo="Typo.body2">In stock: 1452</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Success">61%</MudText>
+                            </div>
+                            <MudProgressLinear Value="61" Color="Color.Success" Class="mb-3" />
+                            
+                            <div class="d-flex justify-space-between align-center mb-2">
+                                <MudText Typo="Typo.body2">Low stock: 365</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Warning">15%</MudText>
+                            </div>
+                            <MudProgressLinear Value="15" Color="Color.Warning" Class="mb-3" />
+                            
+                            <div class="d-flex justify-space-between align-center mb-2">
+                                <MudText Typo="Typo.body2">Out of stock: 186</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Error">8%</MudText>
+                            </div>
+                            <MudProgressLinear Value="8" Color="Color.Error" />
+                        </div>
+                        
+                        <!-- Additional spacing to match height -->
+                        <div style="margin-top: auto;">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-4">
+                                Last updated: @DateTime.Now.ToString("MMM dd, yyyy")
+                            </MudText>
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+        
+
+        
+        <!-- Recent Activity Section -->
+        <MudCard Elevation="0">
+            <MudCardHeader>
+                <MudText Typo="Typo.h5">Recent Activity</MudText>
+            </MudCardHeader>
+            <MudCardContent>
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex align-center">
+                        <MudAvatar Size="Size.Small" Color="Color.Success" Class="mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" />
+                        </MudAvatar>
+                        <div>
+                            <MudText Typo="Typo.body1">New item added: Premium Coffee Beans</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">2 hours ago</MudText>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-center">
+                        <MudAvatar Size="Size.Small" Color="Color.Warning" Class="mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" />
+                        </MudAvatar>
+                        <div>
+                            <MudText Typo="Typo.body1">Low stock alert: Organic Milk</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">4 hours ago</MudText>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-center">
+                        <MudAvatar Size="Size.Small" Color="Color.Info" Class="mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Inventory" />
+                        </MudAvatar>
+                        <div>
+                            <MudText Typo="Typo.body1">Inventory count completed: Freezer Section</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">6 hours ago</MudText>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-center">
+                        <MudAvatar Size="Size.Small" Color="Color.Error" Class="mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Remove" />
+                        </MudAvatar>
+                        <div>
+                            <MudText Typo="Typo.body1">Out of stock: Fresh Bread</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">8 hours ago</MudText>
+                        </div>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+        
+        <!-- Quick Actions Section -->
+        <MudGrid Class="mt-6">
+            <MudItem xs="12">
+                <MudCard Elevation="0">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h5">Quick Actions</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Primary" 
+                                          FullWidth="true" 
+                                          StartIcon="@Icons.Material.Filled.Add"
+                                          Class="mb-2">
+                                    Add New Item
+                                </MudButton>
+                            </MudItem>
+                            
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Info" 
+                                          FullWidth="true" 
+                                          StartIcon="@Icons.Material.Filled.Inventory"
+                                          Class="mb-2">
+                                    Start Count
+                                </MudButton>
+                            </MudItem>
+                            
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Warning" 
+                                          FullWidth="true" 
+                                          StartIcon="@Icons.Material.Filled.Warning"
+                                          Class="mb-2">
+                                    Low Stock Report
+                                </MudButton>
+                            </MudItem>
+                            
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Success" 
+                                          FullWidth="true" 
+                                          StartIcon="@Icons.Material.Filled.Download"
+                                          Class="mb-2">
+                                    Export Data
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
     </div>
 }
 
