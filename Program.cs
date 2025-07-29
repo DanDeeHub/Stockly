@@ -2,6 +2,7 @@ using MudBlazor.Services;
 using Stockly.Components;
 using Stockly.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MudBlazor services

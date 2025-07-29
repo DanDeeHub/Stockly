@@ -6,18 +6,18 @@ namespace Stockly.Services
     public class FirebaseService
     {
         private readonly FirestoreDb _db;
-        private readonly string _credentialsPath;
 
         public FirebaseService(IConfiguration configuration)
         {
-            _credentialsPath = Path.Combine(Directory.GetCurrentDirectory(), "Credentials", "Firebase", "stockly-db-firebase-adminsdk-fbsvc-0441a05a82.json");
-            
             try
             {
+                // Use the credentials file for now (it's already in .gitignore)
+                var credentialsPath = Path.Combine(Directory.GetCurrentDirectory(), "Credentials", "Firebase", "stockly-db-firebase-adminsdk-fbsvc-0441a05a82.json");
+                
                 var builder = new FirestoreDbBuilder
                 {
                     ProjectId = "stockly-db",
-                    CredentialsPath = _credentialsPath
+                    CredentialsPath = credentialsPath
                 };
                 
                 _db = builder.Build();
@@ -26,10 +26,8 @@ namespace Stockly.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error connecting to Firebase: {ex.Message}");
-                Console.WriteLine($"Please ensure:");
-                Console.WriteLine($"1. The project 'stockly-db' exists in Firebase Console");
-                Console.WriteLine($"2. Firestore Database is enabled for this project");
-                Console.WriteLine($"3. The service account has proper permissions");
+                Console.WriteLine($"Please ensure the Firebase credentials file exists at:");
+                Console.WriteLine($"Credentials/Firebase/stockly-db-firebase-adminsdk-fbsvc-0441a05a82.json");
                 throw;
             }
         }

@@ -83,3 +83,8 @@ replay_pid*
 # Ignore all obj folders (recursive)
 **/obj/
 
+# Firebase credentials
+Credentials/
+*.json
+.env
+
