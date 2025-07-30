@@ -218,7 +218,7 @@
                     <MudGrid>
                         <MudItem xs="12">
                             <MudText Typo="Typo.subtitle1" Class="mb-2">Sort By</MudText>
-                            <MudSelect @bind-Value="_sortOrder" Label="Sort Order" Variant="Variant.Outlined" FullWidth="true">
+                            <MudSelect ShrinkLabel @bind-Value="_sortOrder" Label="Sort Order" Variant="Variant.Outlined" FullWidth="true">
                                 <MudSelectItem Value="@("name_asc")">Name Ascending</MudSelectItem>
                                 <MudSelectItem Value="@("name_desc")">Name Descending</MudSelectItem>
                                 <MudSelectItem Value="@("price_asc")">Price Low to High</MudSelectItem>
@@ -230,7 +230,7 @@
                         
                         <MudItem xs="12">
                             <MudText Typo="Typo.subtitle1" Class="mb-2">Category</MudText>
-                            <MudSelect @bind-Value="_selectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true">
+                            <MudSelect ShrinkLabel @bind-Value="_selectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true">
                                 <MudSelectItem Value="@("")">All Categories</MudSelectItem>
                                 @foreach (var category in AvailableCategories)
                                 {
@@ -241,7 +241,7 @@
                         
                         <MudItem xs="12">
                             <MudText Typo="Typo.subtitle1" Class="mb-2">Stock Status</MudText>
-                            <MudSelect @bind-Value="_selectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true">
+                            <MudSelect ShrinkLabel @bind-Value="_selectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true">
                                 <MudSelectItem Value="@("")">All Status</MudSelectItem>
                                 <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
                                 <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
