@@ -1,5 +1,6 @@
 using Google.Cloud.Firestore;
 using System.Text.Json;
+using MudBlazor;
 
 namespace Stockly.Services
 {
@@ -124,6 +125,150 @@ namespace Stockly.Services
                 return false;
             }
         }
+
+        // Product Management Methods
+        public async Task<List<Product>> GetProductsAsync()
+        {
+            try
+            {
+                Console.WriteLine("Attempting to get products from Firestore...");
+                
+                CollectionReference productsRef = _db.Collection("products");
+                QuerySnapshot snapshot = await productsRef.GetSnapshotAsync();
+                
+                Console.WriteLine($"Found {snapshot.Count} products in collection");
+                
+                var products = new List<Product>();
+                foreach (DocumentSnapshot doc in snapshot.Documents)
+                {
+                    var data = doc.ConvertTo<Dictionary<string, object>>();
+                    var product = new Product
+                    {
+                        Id = doc.Id,
+                        Name = data.ContainsKey("name") ? data["name"].ToString() : "",
+                        Category = data.ContainsKey("category") ? data["category"].ToString() : "",
+                        Stock = data.ContainsKey("stock") ? Convert.ToInt32(data["stock"]) : 0,
+                        Status = data.ContainsKey("status") ? data["status"].ToString() : "",
+                        Price = data.ContainsKey("price") ? Convert.ToDecimal(data["price"]) : 0,
+                        CreatedAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow
+                    };
+                    
+                    // Set status color based on status
+                    product.StatusColor = product.Status switch
+                    {
+                        "In stock" => Color.Success,
+                        "Low stock" => Color.Warning,
+                        "Out of stock" => Color.Error,
+                        _ => Color.Default
+                    };
+                    
+                    products.Add(product);
+                    Console.WriteLine($"Loaded product: {product.Name} (ID: {product.Id})");
+                }
+                
+                Console.WriteLine($"Successfully loaded {products.Count} products");
+                return products;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting products: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return new List<Product>();
+            }
+        }
+
+        public async Task<bool> CreateProductAsync(Product product)
+        {
+            try
+            {
+                Console.WriteLine($"Attempting to create product: {product.Name}");
+                
+                CollectionReference productsRef = _db.Collection("products");
+                var productData = new Dictionary<string, object>
+                {
+                    { "name", product.Name },
+                    { "category", product.Category },
+                    { "stock", product.Stock },
+                    { "status", product.Status },
+                    { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
+                    { "createdAt", Timestamp.FromDateTime(DateTime.UtcNow) }
+                };
+
+                Console.WriteLine($"Product data prepared: {JsonSerializer.Serialize(productData)}");
+                
+                // Add the document to the collection (this will create the collection if it doesn't exist)
+                DocumentReference docRef = await productsRef.AddAsync(productData);
+                
+                Console.WriteLine($"Product created successfully with ID: {docRef.Id}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating product: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateProductAsync(Product product)
+        {
+            try
+            {
+                DocumentReference productRef = _db.Collection("products").Document(product.Id);
+                var productData = new Dictionary<string, object>
+                {
+                    { "name", product.Name },
+                    { "category", product.Category },
+                    { "stock", product.Stock },
+                    { "status", product.Status },
+                    { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
+                    { "updatedAt", Timestamp.FromDateTime(DateTime.UtcNow) }
+                };
+
+                await productRef.UpdateAsync(productData);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating product: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteProductAsync(string productId)
+        {
+            try
+            {
+                DocumentReference productRef = _db.Collection("products").Document(productId);
+                await productRef.DeleteAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting product: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> TestConnectionAsync()
+        {
+            try
+            {
+                Console.WriteLine("Testing Firebase connection...");
+                
+                // Try to access a collection to test the connection
+                CollectionReference testRef = _db.Collection("test");
+                await testRef.GetSnapshotAsync();
+                
+                Console.WriteLine("Firebase connection test successful");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Firebase connection test failed: {ex.Message}");
+                return false;
+            }
+        }
     }
 
     public class User
@@ -132,5 +277,17 @@ namespace Stockly.Services
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
+    }
+
+    public class Product
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public int Stock { get; set; }
+        public string Status { get; set; } = "";
+        public Color StatusColor { get; set; }
+        public decimal Price { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 } 

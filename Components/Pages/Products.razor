@@ -1,5 +1,7 @@
 ﻿@page "/Products"
 @using Stockly.Services
+@inject FirebaseService FirebaseService
+@inject ISnackbar Snackbar
 
 <PageTitle>Products</PageTitle>
 
@@ -31,36 +33,62 @@
             </MudCardContent>
         </MudCard>
         
-        <!-- Products Table -->
-        <MudCard Elevation="0">
-            <MudCardContent Class="pa-2 pa-sm-4">
-                <MudTable Items="@FilteredProducts" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm">
-                    <HeaderContent>
-                        <MudTh>Product Name</MudTh>
-                        <MudTh>Category</MudTh>
-                        <MudTh>Stock</MudTh>
-                        <MudTh>Status</MudTh>
-                        <MudTh>Price</MudTh>
-                        <MudTh>Action</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd>@context.Name</MudTd>
-                        <MudTd>@context.Category</MudTd>
-                        <MudTd>@context.Stock</MudTd>
-                        <MudTd><MudText Color="@context.StatusColor" Typo="Typo.body2">@context.Status</MudText></MudTd>
-                        <MudTd>$@context.Price.ToString("N0")</MudTd>
-                        <MudTd>
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
-                                <MudMenuItem OnClick="@(() => ViewProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Visibility" Class="mr-2" />View Details</MudMenuItem>
-                                <MudMenuItem OnClick="@(() => EditProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />Edit</MudMenuItem>
-                                <MudMenuItem OnClick="@(() => DeleteProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-2" />Delete</MudMenuItem>
-                            </MudMenu>
-                        </MudTd>
-                    </RowTemplate>
-                    <PagerContent><MudTablePager /></PagerContent>
-                </MudTable>
-            </MudCardContent>
-        </MudCard>
+        <!-- Loading State -->
+        @if (isLoading)
+        {
+            <MudCard Elevation="0">
+                <MudCardContent Class="pa-4 text-center">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    <MudText Class="mt-2">Loading products...</MudText>
+                </MudCardContent>
+            </MudCard>
+        }
+        else
+        {
+            <!-- Products Table -->
+            <MudCard Elevation="0">
+                <MudCardContent Class="pa-2 pa-sm-4">
+                    @if (FilteredProducts.Any())
+                    {
+                        <MudTable Items="@FilteredProducts" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm">
+                            <HeaderContent>
+                                <MudTh>Product Name</MudTh>
+                                <MudTh>Category</MudTh>
+                                <MudTh>Stock</MudTh>
+                                <MudTh>Status</MudTh>
+                                <MudTh>Price</MudTh>
+                                <MudTh>Last Updated</MudTh>
+                                <MudTh>Action</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Name</MudTd>
+                                <MudTd>@context.Category</MudTd>
+                                <MudTd>@context.Stock</MudTd>
+                                <MudTd><MudText Color="@context.StatusColor" Typo="Typo.body2">@context.Status</MudText></MudTd>
+                                <MudTd>₱@context.Price.ToString("N0")</MudTd>
+                                <MudTd>@context.CreatedAt.ToString("MM/dd/yy")</MudTd>
+                                <MudTd>
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                                        <MudMenuItem OnClick="@(() => ViewProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Visibility" Class="mr-2" />View Details</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => EditProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />Edit</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => DeleteProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-2" />Delete</MudMenuItem>
+                                    </MudMenu>
+                                </MudTd>
+                            </RowTemplate>
+                            <PagerContent><MudTablePager /></PagerContent>
+                        </MudTable>
+                    }
+                    else
+                    {
+                        <div class="text-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" />
+                            <MudText Typo="Typo.h6" Class="mt-2">No products found</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Add your first product to get started</MudText>
+                        </div>
+                    }
+                </MudCardContent>
+            </MudCard>
+        }
     </div>
     
     <!-- Add Product Modal -->
@@ -89,7 +117,7 @@
                             <MudNumericField @bind-Value="newProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudNumericField @bind-Value="newProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="$" />
+                            <MudNumericField @bind-Value="newProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
                         </MudItem>
                         <MudItem xs="12">
                             <MudSelect @bind-Value="newProduct.Status" Label="Status" Variant="Variant.Outlined" Required="true">
@@ -102,8 +130,17 @@
                 </MudCardContent>
                 
                 <MudCardActions Class="justify-start pa-2 pa-sm-4">
-                    <MudButton OnClick="CloseModal" Variant="Variant.Text" Class="mr-2">Cancel</MudButton>
-                    <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary">Save Product</MudButton>
+                    <MudButton OnClick="CloseModal" Variant="Variant.Text" Class="mr-2" Disabled="@isSaving">Cancel</MudButton>
+                    <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary" Disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Save Product</span>
+                        }
+                    </MudButton>
                 </MudCardActions>
             </MudCard>
         </MudOverlay>
@@ -113,21 +150,44 @@
 @code {
     private string searchString = "";
     private bool isAddProductDialogOpen = false;
+    private bool isLoading = true;
+    private bool isSaving = false;
     private Product newProduct = new();
+    private List<Product> products = new();
 
-    private List<Product> products = new()
+    protected override async Task OnInitializedAsync()
     {
-        new Product { Name = "PixelMate", Category = "Electronics", Stock = 595, Status = "In stock", StatusColor = Color.Success, Price = 4347 },
-        new Product { Name = "FusionLink", Category = "Electronics", Stock = 761, Status = "In stock", StatusColor = Color.Success, Price = 5347 },
-        new Product { Name = "VelvetAura", Category = "Apparel", Stock = 765, Status = "Out of stock", StatusColor = Color.Error, Price = 2347 },
-        new Product { Name = "UrbanFlex Sneakers", Category = "Apparel", Stock = 65, Status = "Low stock", StatusColor = Color.Warning, Price = 9347 },
-        new Product { Name = "SilkSage Wrap", Category = "Wellness", Stock = 165, Status = "In stock", StatusColor = Color.Success, Price = 4347 },
-        new Product { Name = "CasaLuxe", Category = "Home & Living", Stock = 575, Status = "Low stock", StatusColor = Color.Warning, Price = 3347 },
-        new Product { Name = "TechFlow Pro", Category = "Electronics", Stock = 890, Status = "In stock", StatusColor = Color.Success, Price = 6547 },
-        new Product { Name = "EcoFresh", Category = "Wellness", Stock = 0, Status = "Out of stock", StatusColor = Color.Error, Price = 1847 },
-        new Product { Name = "LuxeComfort", Category = "Home & Living", Stock = 45, Status = "Low stock", StatusColor = Color.Warning, Price = 7247 },
-        new Product { Name = "SportFlex Elite", Category = "Apparel", Stock = 678, Status = "In stock", StatusColor = Color.Success, Price = 3947 },
-    };
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            isLoading = true;
+            
+            // Test Firebase connection first
+            var connectionTest = await FirebaseService.TestConnectionAsync();
+            if (!connectionTest)
+            {
+                ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error);
+                return;
+            }
+            
+            products = await FirebaseService.GetProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in LoadProducts: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
 
     private List<Product> FilteredProducts => products
         .Where(product => string.IsNullOrEmpty(searchString) || 
@@ -138,16 +198,45 @@
     private void ViewProduct(Product product)
     {
         // TODO: Implement view product functionality
+        ShowCenteredNotification($"Viewing product: {product.Name}", Severity.Info);
     }
 
     private void EditProduct(Product product)
     {
         // TODO: Implement edit product functionality
+        ShowCenteredNotification($"Editing product: {product.Name}", Severity.Info);
     }
 
-    private void DeleteProduct(Product product)
+    private async Task DeleteProduct(Product product)
     {
-        // TODO: Implement delete product functionality
+        try
+        {
+            var confirmed = await ShowDeleteConfirmation(product.Name);
+            if (confirmed)
+            {
+                var success = await FirebaseService.DeleteProductAsync(product.Id);
+                if (success)
+                {
+                    products.Remove(product);
+                    ShowCenteredNotification($"Product '{product.Name}' deleted successfully", Severity.Success);
+                    StateHasChanged();
+                }
+                else
+                {
+                    ShowCenteredNotification($"Failed to delete product '{product.Name}'", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCenteredNotification($"Error deleting product: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private Task<bool> ShowDeleteConfirmation(string productName)
+    {
+        // For now, return true. In a real app, you'd show a confirmation dialog
+        return Task.FromResult(true);
     }
 
     private void OpenAddProductDialog()
@@ -162,10 +251,20 @@
         StateHasChanged();
     }
 
-    private void SaveProduct()
+    private async Task SaveProduct()
     {
-        if (!string.IsNullOrEmpty(newProduct.Name) && !string.IsNullOrEmpty(newProduct.Category))
+        if (string.IsNullOrEmpty(newProduct.Name) || string.IsNullOrEmpty(newProduct.Category))
         {
+            ShowCenteredNotification("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            // Set status color based on status
             newProduct.StatusColor = newProduct.Status switch
             {
                 "In stock" => Color.Success,
@@ -173,20 +272,38 @@
                 "Out of stock" => Color.Error,
                 _ => Color.Default
             };
-            
-            products.Add(newProduct);
-            isAddProductDialogOpen = false;
+
+            var success = await FirebaseService.CreateProductAsync(newProduct);
+            if (success)
+            {
+                // Reload products to get the new product with its ID
+                await LoadProducts();
+                isAddProductDialogOpen = false;
+                ShowCenteredNotification($"Product '{newProduct.Name}' added successfully", Severity.Success);
+            }
+            else
+            {
+                ShowCenteredNotification($"Failed to add product '{newProduct.Name}'", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCenteredNotification($"Error saving product: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
             StateHasChanged();
         }
     }
 
-    public class Product
+    private void ShowCenteredNotification(string message, Severity severity)
     {
-        public string Name { get; set; } = "";
-        public string Category { get; set; } = "";
-        public int Stock { get; set; }
-        public string Status { get; set; } = "";
-        public Color StatusColor { get; set; }
-        public decimal Price { get; set; }
+        Snackbar.Add(message, severity, config =>
+        {
+            config.RequireInteraction = false;
+            config.ShowCloseIcon = true;
+            config.VisibleStateDuration = 3000;
+        });
     }
 }

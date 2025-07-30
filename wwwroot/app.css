@@ -1,0 +1,67 @@
+/* Global styles for Stockly */
+
+/* Position snackbar at bottom center - simplified approach */
+.mud-snackbar-container,
+[data-mud-snackbar-container],
+.mud-snackbar-root,
+.mud-snackbar {
+    position: fixed !important;
+    bottom: 20px !important;
+    top: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    z-index: 9999 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    max-width: 400px !important;
+    width: calc(100vw - 40px) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Fix content inside snackbar */
+.mud-snackbar-container .mud-snackbar,
+[data-mud-snackbar-container] .mud-snackbar,
+.mud-snackbar-root .mud-snackbar,
+.mud-snackbar {
+    padding: 12px 16px !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+    .mud-snackbar-container,
+    [data-mud-snackbar-container],
+    .mud-snackbar-root,
+    .mud-snackbar {
+        bottom: max(20px, env(safe-area-inset-bottom)) !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: calc(100vw - 40px) !important;
+        max-width: 400px !important;
+    }
+}
+
+/* iPhone 12 Pro specific adjustments */
+@media (max-width: 390px) {
+    .mud-snackbar-container,
+    [data-mud-snackbar-container],
+    .mud-snackbar-root,
+    .mud-snackbar {
+        bottom: max(20px, env(safe-area-inset-bottom)) !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: calc(100vw - 20px) !important;
+    }
+}
+
+/* Add any custom global styles here */ 
