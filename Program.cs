@@ -13,6 +13,7 @@ builder.Services.AddScoped<FirebaseService>();
 builder.Services.AddScoped<UserStateService>();
 builder.Services.AddScoped<DrawerService>();
 builder.Services.AddScoped<AuthorizationService>();
+builder.Services.AddScoped<SecureStorageService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

@@ -82,10 +82,10 @@
         showLogoutConfirm = true;
     }
     
-    private void ConfirmLogout()
+    private async Task ConfirmLogout()
     {
         showLogoutConfirm = false;
-        UserState.Logout();
+        await UserState.LogoutAsync();
         DrawerService.Close();
         Navigation.NavigateTo("/Login");
     }

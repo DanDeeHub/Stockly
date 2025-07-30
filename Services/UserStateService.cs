@@ -5,6 +5,12 @@ namespace Stockly.Services
     public class UserStateService
     {
         private User? _currentUser;
+        private SecureStorageService? _secureStorage;
+
+        public UserStateService(SecureStorageService secureStorage)
+        {
+            _secureStorage = secureStorage;
+        }
 
         public User? CurrentUser
         {
@@ -22,15 +28,21 @@ namespace Stockly.Services
 
         public event Action? OnChange;
 
-                            public void Login(User user)
-                    {
-                        CurrentUser = user;
-                        Console.WriteLine($"User logged in: {user.Username}, Role: '{user.Role}'");
-                    }
+        public void Login(User user)
+        {
+            CurrentUser = user;
+            Console.WriteLine($"User logged in: {user.Username}, Role: '{user.Role}'");
+        }
 
-        public void Logout()
+        public async Task LogoutAsync()
         {
             CurrentUser = null;
+            
+            // Clear stored credentials on logout
+            if (_secureStorage != null)
+            {
+                await _secureStorage.ClearAllStorageAsync();
+            }
         }
 
         public void NotifyStateChanged()

@@ -3,6 +3,7 @@
 @inject FirebaseService FirebaseService
 @inject UserStateService UserState
 @inject NavigationManager Navigation
+@inject SecureStorageService SecureStorage
 
 <PageTitle>Login</PageTitle>
 
@@ -18,6 +19,8 @@
             <div class="d-flex align-center">
                 <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" Required="true" RequiredError="Please enter your password" InputType="InputType.Password" Class="flex-grow-1" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
             </div>
+            
+            <MudCheckBox T="bool" @bind-Checked="RememberMe" Label="Remember Me" Color="Color.Primary" />
             
             @if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -40,19 +43,46 @@
 </div>
 
 @code {
-    private string Username { get; set; }
-    private string Password { get; set; }
+    private string Username { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
     private string errorMessage = string.Empty;
-    private MudForm form;
+    private MudForm form = null!;
     private bool isValid;
-    private string[] errors;
+    private string[] errors = Array.Empty<string>();
     private bool isLoading = false;
+    private bool RememberMe { get; set; } = false;
     
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (UserState.IsAuthenticated)
         {
             Navigation.NavigateTo("/");
+            return;
+        }
+
+        // Try to load saved credentials
+        try
+        {
+            var savedCredentials = await SecureStorage.LoadCredentialsAsync();
+            if (savedCredentials != null)
+            {
+                Username = savedCredentials.Username;
+                Password = savedCredentials.Password;
+                RememberMe = true;
+            }
+            else
+            {
+                // Try to load session data
+                var sessionData = await SecureStorage.LoadSessionDataAsync();
+                if (sessionData != null)
+                {
+                    Username = sessionData.Username;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading saved credentials: {ex.Message}");
         }
     }
     
@@ -76,6 +106,10 @@
             if (user != null)
             {
                 UserState.Login(user);
+                
+                // Save credentials if "Remember Me" is checked
+                await SecureStorage.SaveCredentialsAsync(Username, Password, RememberMe);
+                
                 Navigation.NavigateTo("/");
             }
             else
