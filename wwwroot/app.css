@@ -64,4 +64,62 @@
     }
 }
 
-/* Add any custom global styles here */ 
+/* Add any custom global styles here */
+
+/* Remove all elevation shadows from MudBlazor components */
+.mud-button,
+.mud-button-root,
+.mud-button-base,
+.mud-card,
+.mud-card-root,
+.mud-card-base,
+.mud-paper,
+.mud-paper-root,
+.mud-paper-base,
+.mud-overlay,
+.mud-overlay-root,
+.mud-overlay-base,
+.mud-dialog,
+.mud-dialog-root,
+.mud-dialog-base,
+.mud-menu,
+.mud-menu-root,
+.mud-menu-base,
+.mud-select,
+.mud-select-root,
+.mud-select-base,
+.mud-text-field,
+.mud-text-field-root,
+.mud-text-field-base,
+.mud-numeric-field,
+.mud-numeric-field-root,
+.mud-numeric-field-base,
+.mud-autocomplete,
+.mud-autocomplete-root,
+.mud-autocomplete-base,
+.mud-icon-button,
+.mud-icon-button-root,
+.mud-icon-button-base {
+    box-shadow: none !important;
+    filter: none !important;
+    -webkit-box-shadow: none !important;
+    -moz-box-shadow: none !important;
+}
+
+/* Remove elevation from all MudBlazor components with elevation classes */
+[class*="elevation-"],
+[class*="mud-elevation-"] {
+    box-shadow: none !important;
+    filter: none !important;
+    -webkit-box-shadow: none !important;
+    -moz-box-shadow: none !important;
+}
+
+/* Remove shadows from buttons specifically */
+.mud-button[style*="box-shadow"],
+.mud-button[style*="filter"] {
+    box-shadow: none !important;
+    filter: none !important;
+    -webkit-box-shadow: none !important;
+    -moz-box-shadow: none !important;
+} 

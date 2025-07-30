@@ -126,6 +126,7 @@ else
                                           Color="Color.Primary" 
                                           StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
                                           OnClick="ShowAllActivities"
+                                          Elevation="0"
                                           Size="Size.Small">
                                     See More (@(_recentActivities.Count - 4) more)
                                 </MudButton>
@@ -136,6 +137,7 @@ else
                                           Color="Color.Primary" 
                                           StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
                                           OnClick="ShowLessActivities"
+                                          Elevation="0"
                                           Size="Size.Small">
                                     Show Less
                                 </MudButton>
@@ -163,11 +165,11 @@ else
                     </MudCardHeader>
                     <MudCardContent>
                         <div class="d-flex flex-wrap gap-2">
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProductDialog" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Add New Product</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Inventory" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Start Count</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Low Stock Report</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="OpenOutOfStockReport" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Out of Stock</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Download" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Export Data</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProductDialog" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Add New Product</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Inventory" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Start Count</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Low Stock Report</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="OpenOutOfStockReport" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Out of Stock</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Download" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Export Data</MudButton>
                         </div>
                     </MudCardContent>
                 </MudCard>
@@ -218,8 +220,8 @@ else
                 </MudCardContent>
                 
                 <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
-                    <MudButton OnClick="CloseModal" Variant="Variant.Text" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
-                    <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
+                    <MudButton OnClick="CloseModal" Variant="Variant.Text" Elevation="0" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
+                    <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary" Elevation="0" Disabled="@_isSaving">
                         @if (_isSaving)
                         {
                             <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
