@@ -42,7 +42,7 @@ else
                         <MudCard Elevation="0" Class="h-100">
                             <MudCardContent>
                                 <MudText Typo="Typo.h6" Class="mb-3">Total Asset Value</MudText>
-                                <MudText Typo="Typo.h3" Color="Color.Primary" Class="mb-2">$10,356,788</MudText>
+                                <MudText Typo="Typo.h3" Color="Color.Primary" Class="mb-2">₱@TotalAssetValue.ToString("N0")</MudText>
                                 <MudText Typo="Typo.body2" Color="Color.Secondary">Total value of all inventory assets</MudText>
                             </MudCardContent>
                         </MudCard>
@@ -335,6 +335,8 @@ else
     private int InStockPercentage => TotalProducts > 0 ? (int)Math.Round((double)InStockCount / TotalProducts * 100) : 0;
     private int LowStockPercentage => TotalProducts > 0 ? (int)Math.Round((double)LowStockCount / TotalProducts * 100) : 0;
     private int OutOfStockPercentage => TotalProducts > 0 ? (int)Math.Round((double)OutOfStockCount / TotalProducts * 100) : 0;
+
+    private decimal TotalAssetValue => _products.Sum(p => p.Price * p.Stock);
 
     private List<string> AvailableCategories => _products.Select(p => p.Category).Distinct().ToList();
 
