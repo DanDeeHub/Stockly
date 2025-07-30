@@ -73,7 +73,11 @@ namespace Stockly.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading credentials: {ex.Message}");
-                await ClearCredentialsAsync();
+                // Don't try to clear credentials during prerendering
+                if (!ex.Message.Contains("JavaScript interop calls cannot be issued"))
+                {
+                    await ClearCredentialsAsync();
+                }
                 return null;
             }
         }
@@ -121,7 +125,11 @@ namespace Stockly.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading session data: {ex.Message}");
-                await ClearSessionDataAsync();
+                // Don't try to clear session data during prerendering
+                if (!ex.Message.Contains("JavaScript interop calls cannot be issued"))
+                {
+                    await ClearSessionDataAsync();
+                }
                 return null;
             }
         }
@@ -135,6 +143,7 @@ namespace Stockly.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error clearing credentials: {ex.Message}");
+                // Ignore prerendering errors
             }
         }
 
@@ -147,6 +156,7 @@ namespace Stockly.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error clearing session data: {ex.Message}");
+                // Ignore prerendering errors
             }
         }
 

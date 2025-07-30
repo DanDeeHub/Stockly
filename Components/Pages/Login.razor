@@ -72,30 +72,38 @@
             Navigation.NavigateTo("/");
             return;
         }
-
-        // Try to load saved credentials
-        try
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !UserState.IsAuthenticated)
         {
-            var savedCredentials = await SecureStorage.LoadCredentialsAsync();
-            if (savedCredentials != null)
+            // Try to load saved credentials after the component has rendered
+            try
             {
-                Username = savedCredentials.Username;
-                Password = savedCredentials.Password;
-                RememberMe = true;
-            }
-            else
-            {
-                // Try to load session data
-                var sessionData = await SecureStorage.LoadSessionDataAsync();
-                if (sessionData != null)
+                var savedCredentials = await SecureStorage.LoadCredentialsAsync();
+                if (savedCredentials != null)
                 {
-                    Username = sessionData.Username;
+                    Username = savedCredentials.Username;
+                    Password = savedCredentials.Password;
+                    RememberMe = true;
+                    StateHasChanged();
+                }
+                else
+                {
+                    // Try to load session data
+                    var sessionData = await SecureStorage.LoadSessionDataAsync();
+                    if (sessionData != null)
+                    {
+                        Username = sessionData.Username;
+                        StateHasChanged();
+                    }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading saved credentials: {ex.Message}");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading saved credentials: {ex.Message}");
+            }
         }
     }
     
