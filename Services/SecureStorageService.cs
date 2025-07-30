@@ -42,9 +42,8 @@ namespace Stockly.Services
                 
                 await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "stockly_credentials", encryptedData);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error saving credentials: {ex.Message}");
                 throw;
             }
         }
@@ -72,7 +71,6 @@ namespace Stockly.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading credentials: {ex.Message}");
                 // Don't try to clear credentials during prerendering
                 if (!ex.Message.Contains("JavaScript interop calls cannot be issued"))
                 {
@@ -96,9 +94,9 @@ namespace Stockly.Services
                 var json = JsonSerializer.Serialize(sessionData);
                 await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "stockly_session", json);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error saving session data: {ex.Message}");
+                // Ignore errors
             }
         }
 
@@ -124,7 +122,6 @@ namespace Stockly.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading session data: {ex.Message}");
                 // Don't try to clear session data during prerendering
                 if (!ex.Message.Contains("JavaScript interop calls cannot be issued"))
                 {
@@ -140,9 +137,8 @@ namespace Stockly.Services
             {
                 await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "stockly_credentials");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error clearing credentials: {ex.Message}");
                 // Ignore prerendering errors
             }
         }
@@ -153,9 +149,8 @@ namespace Stockly.Services
             {
                 await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "stockly_session");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error clearing session data: {ex.Message}");
                 // Ignore prerendering errors
             }
         }
@@ -185,9 +180,8 @@ namespace Stockly.Services
 
                 return Convert.ToBase64String(msEncrypt.ToArray());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Encryption error: {ex.Message}");
                 throw;
             }
         }
@@ -207,9 +201,8 @@ namespace Stockly.Services
 
                 return srDecrypt.ReadToEnd();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Decryption error: {ex.Message}");
                 throw;
             }
         }

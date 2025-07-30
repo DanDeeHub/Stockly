@@ -39,7 +39,6 @@ namespace Stockly.Services
         public void Login(User user)
         {
             CurrentUser = user;
-            Console.WriteLine($"User logged in: {user.Username}, Role: '{user.Role}'");
         }
 
         public async Task LogoutAsync()

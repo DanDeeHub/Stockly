@@ -16,9 +16,7 @@ namespace Stockly.Services
             if (!_userState.IsAuthenticated)
                 return false;
 
-            Console.WriteLine($"Checking access for page '{pageName}', User role: '{_userState.Role}'");
-            
-            var result = pageName.ToLower() switch
+            return pageName.ToLower() switch
             {
                 "home" => true, // Everyone can access home
                 "products" => _userState.Role == "admin", // Only Admin can access products
@@ -30,9 +28,6 @@ namespace Stockly.Services
                 "login" => true, // Everyone can access login
                 _ => false // Default deny
             };
-            
-            Console.WriteLine($"Access result for '{pageName}': {result}");
-            return result;
         }
 
         public bool HasRole(string role)

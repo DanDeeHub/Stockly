@@ -251,7 +251,6 @@
         catch (Exception ex)
         {
             errorMessage = "An error occurred while creating the user. Please try again.";
-            Console.WriteLine($"Registration error: {ex.Message}");
         }
         finally
         {
@@ -320,24 +319,15 @@
 
         try
         {
-            Console.WriteLine($"Attempting to create reminder: Title='{_newReminder.Title}', Message='{_newReminder.Message}'");
-            
             // Test Firebase connection first
             var connectionTest = await FirebaseService.TestConnectionAsync();
             if (!connectionTest)
             {
-                Console.WriteLine("Firebase connection test failed");
                 reminderErrorMessage = "Failed to connect to database. Please check your connection.";
                 return;
             }
             
-            // Debug: Log the current user information
-            Console.WriteLine($"Current user in UserState: {UserState.CurrentUser?.Username ?? "NULL"}");
-            Console.WriteLine($"Is authenticated: {UserState.IsAuthenticated}");
-            Console.WriteLine($"User role: {UserState.Role}");
-            
             var creatorUsername = UserState.CurrentUser?.Username ?? "Admin";
-            Console.WriteLine($"Creator username for reminder: {creatorUsername}");
             
             var success = await FirebaseService.CreateReminderAsync(
                 _newReminder.Title, 
@@ -347,21 +337,17 @@
 
             if (success)
             {
-                Console.WriteLine("Reminder created successfully");
                 Snackbar.Add($"Reminder '{_newReminder.Title}' created successfully!", Severity.Success);
                 CloseCreateReminderModal();
                 UserState.NotifyReminderUpdated(); // Notify UserState that a reminder was updated
             }
             else
             {
-                Console.WriteLine("FirebaseService.CreateReminderAsync returned false");
-                reminderErrorMessage = "Failed to create reminder. Please check the console for more details.";
+                reminderErrorMessage = "Failed to create reminder. Please try again.";
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Reminder creation error: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
             reminderErrorMessage = $"An error occurred while creating the reminder: {ex.Message}";
         }
         finally

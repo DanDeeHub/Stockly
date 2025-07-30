@@ -394,8 +394,6 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in LoadProducts: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
             await InvokeAsync(() => ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error));
         }
         finally

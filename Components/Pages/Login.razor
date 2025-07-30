@@ -128,13 +128,6 @@
             {
                 UserState.Login(user);
                 
-                // Debug: Log the user information after login
-                Console.WriteLine($"User logged in with ID: {user.Id.ToString("D")}");
-                Console.WriteLine($"User username: {user.Username}");
-                Console.WriteLine($"User role: {user.Role}");
-                Console.WriteLine($"Is Guid: {user.Id != Guid.Empty}");
-                Console.WriteLine($"UserState CurrentUser after login: {UserState.CurrentUser?.Username}");
-                
                 // Save credentials if "Remember Me" is checked
                 await SecureStorage.SaveCredentialsAsync(user.Id, Username, Password, RememberMe);
                 

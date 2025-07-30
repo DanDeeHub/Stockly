@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using System.IO;
-using System.Reflection;
 using System.Text.Json;
 
 namespace Stockly.Services
@@ -28,13 +27,9 @@ namespace Stockly.Services
                 };
                 
                 _db = builder.Build();
-                Console.WriteLine($"Successfully connected to Firebase project: stockly-db");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error connecting to Firebase: {ex.Message}");
-                Console.WriteLine($"Please ensure the Firebase credentials file exists at:");
-                Console.WriteLine($"Credentials/Firebase/stockly-db-firebase-adminsdk-fbsvc-0441a05a82.json");
                 throw;
             }
         }
@@ -43,18 +38,13 @@ namespace Stockly.Services
         {
             try
             {
-                Console.WriteLine($"Attempting to authenticate user: {username}");
-                
                 // Query the users collection for the username
                 CollectionReference usersRef = _db.Collection("users");
                 Query query = usersRef.WhereEqualTo("username", username);
                 QuerySnapshot snapshot = await query.GetSnapshotAsync();
 
-                Console.WriteLine($"Found {snapshot.Count} matching users");
-
                 if (snapshot.Count == 0)
                 {
-                    Console.WriteLine($"User '{username}' not found in database");
                     return null; // User not found
                 }
 
@@ -62,25 +52,12 @@ namespace Stockly.Services
                 DocumentSnapshot userDoc = snapshot.Documents[0];
                 var userData = userDoc.ConvertTo<Dictionary<string, object>>();
 
-                Console.WriteLine($"User document ID: {userDoc.Id}");
-                if (Guid.TryParse(userDoc.Id, out Guid debugParsedId))
-                {
-                    Console.WriteLine($"Parsed as Guid: {debugParsedId.ToString("D")}");
-                }
-                Console.WriteLine($"User data keys: {string.Join(", ", userData.Keys)}");
-
                 // Check if password matches (in a real app, you'd hash the password)
                 if (userData.ContainsKey("password") && userData["password"].ToString() == password)
                 {
-                    Console.WriteLine($"Authentication successful for user: {username}");
-                    
-                    // Debug: Print all user data
-                    Console.WriteLine($"User data: {JsonSerializer.Serialize(userData)}");
-                    
                     // Handle case where field name might have trailing spaces
                     var roleKey = userData.Keys.FirstOrDefault(k => k.Trim() == "role");
                     var role = roleKey != null ? userData[roleKey].ToString() : "user";
-                    Console.WriteLine($"Retrieved role: '{role}'");
                     
                     // Try to parse the document ID as Guid, fallback to empty Guid if it's not a valid Guid
                     Guid userId = Guid.Empty;
@@ -98,13 +75,10 @@ namespace Stockly.Services
                     };
                 }
 
-                Console.WriteLine($"Invalid password for user: {username}");
                 return null; // Invalid password
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error authenticating user: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return null;
             }
         }
@@ -137,9 +111,8 @@ namespace Stockly.Services
                 await usersRef.Document(userId.ToString()).SetAsync(userData);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error creating user: {ex.Message}");
                 return false;
             }
         }
@@ -149,12 +122,8 @@ namespace Stockly.Services
         {
             try
             {
-                Console.WriteLine("Attempting to get products from Firestore...");
-                
                 CollectionReference productsRef = _db.Collection("products");
                 QuerySnapshot snapshot = await productsRef.GetSnapshotAsync();
-                
-                Console.WriteLine($"Found {snapshot.Count} products in collection");
                 
                 var products = new List<Product>();
                 foreach (DocumentSnapshot doc in snapshot.Documents)
@@ -182,16 +151,12 @@ namespace Stockly.Services
                     };
                     
                     products.Add(product);
-                    Console.WriteLine($"Loaded product: {product.Name} (ID: {product.Id})");
                 }
                 
-                Console.WriteLine($"Successfully loaded {products.Count} products");
                 return products;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error getting products: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return new List<Product>();
             }
         }
@@ -200,8 +165,6 @@ namespace Stockly.Services
         {
             try
             {
-                Console.WriteLine($"Attempting to create product: {product.Name}");
-                
                 CollectionReference productsRef = _db.Collection("products");
                 var productData = new Dictionary<string, object>
                 {
@@ -213,19 +176,13 @@ namespace Stockly.Services
                     { "lowStockThreshold", product.LowStockThreshold },
                     { "createdAt", Timestamp.FromDateTime(DateTime.UtcNow) }
                 };
-
-                Console.WriteLine($"Product data prepared: {JsonSerializer.Serialize(productData)}");
                 
                 // Add the document to the collection (this will create the collection if it doesn't exist)
-                DocumentReference docRef = await productsRef.AddAsync(productData);
-                
-                Console.WriteLine($"Product created successfully with ID: {docRef.Id}");
+                await productsRef.AddAsync(productData);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error creating product: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return false;
             }
         }
@@ -249,9 +206,8 @@ namespace Stockly.Services
                 await productRef.UpdateAsync(productData);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error updating product: {ex.Message}");
                 return false;
             }
         }
@@ -264,9 +220,8 @@ namespace Stockly.Services
                 await productRef.DeleteAsync();
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error deleting product: {ex.Message}");
                 return false;
             }
         }
@@ -295,9 +250,8 @@ namespace Stockly.Services
                 await CreateActivityAsync(activity);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error deleting product with activity: {ex.Message}");
                 return false;
             }
         }
@@ -306,18 +260,13 @@ namespace Stockly.Services
         {
             try
             {
-                Console.WriteLine("Testing Firebase connection...");
-                
                 // Try to access a collection to test the connection
                 CollectionReference testRef = _db.Collection("test");
                 await testRef.GetSnapshotAsync();
-                
-                Console.WriteLine("Firebase connection test successful");
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Firebase connection test failed: {ex.Message}");
                 return false;
             }
         }
@@ -343,9 +292,8 @@ namespace Stockly.Services
                 await activitiesRef.AddAsync(activityData);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error creating activity: {ex.Message}");
                 return false;
             }
         }
@@ -384,9 +332,8 @@ namespace Stockly.Services
 
                 return activities;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error getting recent activities: {ex.Message}");
                 return new List<Activity>();
             }
         }
@@ -422,9 +369,8 @@ namespace Stockly.Services
 
                 return activities;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error getting all activities: {ex.Message}");
                 return new List<Activity>();
             }
         }
@@ -453,12 +399,10 @@ namespace Stockly.Services
                 {
                     try
                     {
-                        Console.WriteLine($"Deleting existing reminder: {doc.Id}");
                         await doc.Reference.DeleteAsync();
                     }
-                    catch (Exception deleteEx)
+                    catch (Exception)
                     {
-                        Console.WriteLine($"Warning: Failed to delete existing reminder {doc.Id}: {deleteEx.Message}");
                         // Continue with creation even if deletion fails
                     }
                 }
@@ -472,18 +416,12 @@ namespace Stockly.Services
                     { "createdAt", Timestamp.FromDateTime(currentTime) },
                     { "createdBy", createdBy }
                 };
-
-                Console.WriteLine($"Adding new reminder with timestamp: {currentTime}");
-                Console.WriteLine($"Reminder data: {JsonSerializer.Serialize(reminderData)}");
                 
-                var docRef = await remindersRef.AddAsync(reminderData);
-                Console.WriteLine($"Reminder created successfully with ID: {docRef.Id} and local timestamp: {currentTime}");
+                await remindersRef.AddAsync(reminderData);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error creating reminder: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return false;
             }
         }
@@ -516,23 +454,19 @@ namespace Stockly.Services
                             CreatedBy = data.ContainsKey("createdBy") ? data["createdBy"].ToString() : ""
                         };
                         reminders.Add(reminder);
-                        Console.WriteLine($"Found active reminder: {reminder.Title}, CreatedAt: {reminder.CreatedAt}");
                     }
                     else
                     {
                         // Delete old reminders (from previous days)
-                        Console.WriteLine($"Deleting old reminder: {(data.ContainsKey("title") ? data["title"].ToString() : "Unknown")}, CreatedAt: {createdAt}");
                         await doc.Reference.DeleteAsync();
                     }
                 }
 
                 var result = reminders.OrderByDescending(r => r.CreatedAt).ToList();
-                Console.WriteLine($"Returning {result.Count} active reminders for today, latest: {result.FirstOrDefault()?.CreatedAt}");
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error getting active reminders: {ex.Message}");
                 return new List<Reminder>();
             }
         }
@@ -545,9 +479,8 @@ namespace Stockly.Services
                 await reminderRef.DeleteAsync();
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error deleting reminder: {ex.Message}");
                 return false;
             }
         }
@@ -590,9 +523,8 @@ namespace Stockly.Services
                 await CreateActivityAsync(activity);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error creating product with activity: {ex.Message}");
                 return false;
             }
         }
@@ -635,9 +567,9 @@ namespace Stockly.Services
                     await CreateActivityAsync(activity);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error checking low stock: {ex.Message}");
+                // Ignore errors
             }
         }
     }
