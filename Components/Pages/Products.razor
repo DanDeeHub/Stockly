@@ -2,6 +2,7 @@
 @using Stockly.Services
 @inject FirebaseService FirebaseService
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <PageTitle>Products</PageTitle>
 
@@ -262,7 +263,60 @@
              </MudCard>
          </MudOverlay>
      }
-</AuthorizedPageBase>
+     
+     <!-- Custom Delete Confirmation Modal -->
+      @if (_isDeleteConfirmationOpen)
+      {
+          <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+              <MudCard Style="width: 95%; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                  <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                      <MudText Typo="Typo.h6">Confirm Delete</MudText>
+                      <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                    OnClick="CancelDelete" 
+                                    Size="Size.Small" 
+                                    Color="Color.Inherit"
+                                    Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                  </MudCardHeader>
+                  
+                  <MudCardContent Class="pa-2 pa-sm-4">
+                      <div class="text-center mb-4">
+                          <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Large" Color="Color.Warning" Class="mb-3" />
+                          <MudText Typo="Typo.body1" Class="mb-3">
+                              Are you sure you want to delete the product "<strong>@_deleteConfirmationProductName</strong>"?
+                          </MudText>
+                          <MudText Typo="Typo.body2" Color="Color.Warning">
+                              This action cannot be undone.
+                          </MudText>
+                      </div>
+                  </MudCardContent>
+                  
+                  <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
+                      <MudButton OnClick="CancelDelete" 
+                                Variant="Variant.Text" 
+                                Elevation="0" 
+                                Class="mr-2" 
+                                Disabled="@_isSaving">
+                          Cancel
+                      </MudButton>
+                      <MudButton OnClick="ConfirmDelete" 
+                                Variant="Variant.Filled" 
+                                Color="Color.Primary" 
+                                Elevation="0" 
+                                Disabled="@_isSaving">
+                          @if (_isSaving)
+                          {
+                              <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
+                          }
+                          else
+                          {
+                              <span>Delete Product</span>
+                          }
+                      </MudButton>
+                  </MudCardActions>
+              </MudCard>
+          </MudOverlay>
+      }
+  </AuthorizedPageBase>
 
 @code {
     private string _searchString = "";
@@ -283,6 +337,10 @@
     private string _tempSortOrder = "name_asc";
     private string _tempSelectedCategory = "";
     private string _tempSelectedStatus = "";
+
+    private string _deleteConfirmationProductName = "";
+    private bool _isDeleteConfirmationOpen = false;
+    private TaskCompletionSource<bool> _deleteConfirmationTcs = null;
 
     public Products() {
         _isAddProductDialogOpen = false;
@@ -377,7 +435,7 @@
             var confirmed = await ShowDeleteConfirmation(product.Name);
             if (confirmed)
             {
-                var success = await FirebaseService.DeleteProductAsync(product.Id);
+                var success = await FirebaseService.DeleteProductWithActivityAsync(product);
                 if (success)
                 {
                     _products.Remove(product);
@@ -396,10 +454,30 @@
         }
     }
 
-    private Task<bool> ShowDeleteConfirmation(string productName)
+    private async Task<bool> ShowDeleteConfirmation(string productName)
     {
-        // For now, return true. In a real app, you'd show a confirmation dialog
-        return Task.FromResult(true);
+        _deleteConfirmationProductName = productName;
+        _isDeleteConfirmationOpen = true;
+        StateHasChanged();
+        
+        // Wait for user response
+        var tcs = new TaskCompletionSource<bool>();
+        _deleteConfirmationTcs = tcs;
+        return await tcs.Task;
+    }
+
+    private void ConfirmDelete()
+    {
+        _isDeleteConfirmationOpen = false;
+        _deleteConfirmationTcs?.SetResult(true);
+        StateHasChanged();
+    }
+
+    private void CancelDelete()
+    {
+        _isDeleteConfirmationOpen = false;
+        _deleteConfirmationTcs?.SetResult(false);
+        StateHasChanged();
     }
 
     private void OpenAddProductDialog()

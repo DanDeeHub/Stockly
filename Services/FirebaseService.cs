@@ -259,6 +259,37 @@ namespace Stockly.Services
             }
         }
 
+        public async Task<bool> DeleteProductWithActivityAsync(Product product)
+        {
+            try
+            {
+                // Delete the product
+                DocumentReference productRef = _db.Collection("products").Document(product.Id);
+                await productRef.DeleteAsync();
+
+                // Create activity for item deletion
+                var activity = new Activity
+                {
+                    Type = "item_deleted",
+                    Title = "Item Deleted",
+                    Description = $"Product '{product.Name}' has been removed from inventory",
+                    ProductName = product.Name,
+                    Category = product.Category,
+                    Timestamp = DateTime.UtcNow,
+                    Icon = Icons.Material.Filled.Delete,
+                    IconColor = Color.Error
+                };
+
+                await CreateActivityAsync(activity);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting product with activity: {ex.Message}");
+                return false;
+            }
+        }
+
         public async Task<bool> TestConnectionAsync()
         {
             try
@@ -344,6 +375,44 @@ namespace Stockly.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting recent activities: {ex.Message}");
+                return new List<Activity>();
+            }
+        }
+
+        public async Task<List<Activity>> GetAllActivitiesAsync()
+        {
+            try
+            {
+                CollectionReference activitiesRef = _db.Collection("activities");
+                
+                Query query = activitiesRef.OrderByDescending("timestamp");
+
+                QuerySnapshot snapshot = await query.GetSnapshotAsync();
+                var activities = new List<Activity>();
+
+                foreach (var doc in snapshot.Documents)
+                {
+                    var data = doc.ToDictionary();
+                    var activity = new Activity
+                    {
+                        Id = doc.Id,
+                        Type = data.ContainsKey("type") ? data["type"].ToString() : "",
+                        Title = data.ContainsKey("title") ? data["title"].ToString() : "",
+                        Description = data.ContainsKey("description") ? data["description"].ToString() : "",
+                        ProductName = data.ContainsKey("productName") ? data["productName"].ToString() : "",
+                        Category = data.ContainsKey("category") ? data["category"].ToString() : "",
+                        Timestamp = data.ContainsKey("timestamp") ? ((Timestamp)data["timestamp"]).ToDateTime() : DateTime.UtcNow,
+                        Icon = data.ContainsKey("icon") ? data["icon"].ToString() : "",
+                        IconColor = data.ContainsKey("iconColor") ? ParseColor(data["iconColor"].ToString()) : Color.Default
+                    };
+                    activities.Add(activity);
+                }
+
+                return activities;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting all activities: {ex.Message}");
                 return new List<Activity>();
             }
         }

@@ -103,7 +103,7 @@ else
                 @if (_recentActivities.Any())
                 {
                     <div class="d-flex flex-column gap-3">
-                        @foreach (var activity in _showAllActivities ? _recentActivities : _recentActivities.Take(4))
+                        @foreach (var activity in _showAllActivities ? _recentActivities.Take(10) : _recentActivities.Take(4))
                         {
                             <div class="d-flex align-center">
                                 <MudAvatar Size="Size.Small" Color="@activity.IconColor" Class="mr-3">
@@ -128,7 +128,7 @@ else
                                           OnClick="ShowAllActivities"
                                           Elevation="0"
                                           Size="Size.Small">
-                                    See More (@(_recentActivities.Count - 4) more)
+                                    See More (@Math.Min(_recentActivities.Count - 4, 6) more)
                                 </MudButton>
                             }
                             else
@@ -167,8 +167,8 @@ else
                         <div class="d-flex flex-wrap gap-2">
                             <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProductDialog" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Add New Product</MudButton>
                             <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Inventory" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Start Count</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Low Stock Report</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="OpenOutOfStockReport" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Out of Stock</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" OnClick="OpenLowStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Low Stock Report</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="OpenOutOfStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Out of Stock</MudButton>
                             <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Download" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Export Data</MudButton>
                         </div>
                     </MudCardContent>
@@ -235,15 +235,143 @@ else
             </MudCard>
         </MudOverlay>
     }
+    
+    <!-- Low Stock Modal -->
+    @if (_isLowStockModalOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000" Style="display: flex; align-items: center; justify-content: center;">
+            <div Style="width: 95vw; max-width: 500px; height: 85vh;">
+                <MudCard Style="width: 100%; height: 100%; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                    <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                        <MudText Typo="Typo.h6">Low Stock Report</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                      OnClick="CloseLowStockModal" 
+                                      Size="Size.Small" 
+                                      Color="Color.Inherit"
+                                      Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                    </MudCardHeader>
+                    
+                    <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                        @if (_lowStockProducts.Any())
+                        {
+                            <MudGrid>
+                                @foreach (var product in _lowStockProducts)
+                                {
+                                    <MudItem xs="12">
+                                        <MudCard Elevation="0" Class="mb-2" Style="border: 1px solid var(--mud-palette-divider);">
+                                            <MudCardContent Class="pa-3">
+                                                <div class="d-flex justify-space-between align-center">
+                                                    <div class="flex-grow-1">
+                                                        <MudText Typo="Typo.h6" Class="mb-1">@product.Name</MudText>
+                                                        <MudText Typo="Typo.body2" Color="Color.Warning">
+                                                            <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small" Class="mr-1" />
+                                                            Total Stock Left: @product.Stock
+                                                        </MudText>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Outlined">
+                                                            Low Stock
+                                                        </MudChip>
+                                                    </div>
+                                                </div>
+                                            </MudCardContent>
+                                        </MudCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                        else
+                        {
+                            <div class="text-center pa-8">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Color="Color.Success" Class="mb-3" />
+                                <MudText Typo="Typo.h5" Class="mb-2">No Low Stock Items</MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Secondary">All products have sufficient stock levels</MudText>
+                            </div>
+                        }
+                    </MudCardContent>
+                    
+                    <MudCardActions Style="flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                        <MudButton OnClick="CloseLowStockModal" Variant="Variant.Text" Color="Color.Secondary" Elevation="0">Close</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </div>
+        </MudOverlay>
+    }
+    
+    <!-- Out of Stock Modal -->
+    @if (_isOutOfStockModalOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000" Style="display: flex; align-items: center; justify-content: center;">
+            <div Style="width: 95vw; max-width: 500px; height: 85vh;">
+                <MudCard Style="width: 100%; height: 100%; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                    <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                        <MudText Typo="Typo.h6">Out of Stock Report</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                      OnClick="CloseOutOfStockModal" 
+                                      Size="Size.Small" 
+                                      Color="Color.Inherit"
+                                      Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                    </MudCardHeader>
+                    
+                    <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                        @if (_outOfStockProducts.Any())
+                        {
+                            <MudGrid>
+                                @foreach (var product in _outOfStockProducts)
+                                {
+                                    <MudItem xs="12">
+                                        <MudCard Elevation="0" Class="mb-2" Style="border: 1px solid var(--mud-palette-divider);">
+                                            <MudCardContent Class="pa-3">
+                                                <div class="d-flex justify-space-between align-center">
+                                                    <div class="flex-grow-1">
+                                                        <MudText Typo="Typo.h6" Class="mb-1">@product.Name</MudText>
+                                                        <MudText Typo="Typo.body2" Color="Color.Error">
+                                                            <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small" Class="mr-1" />
+                                                            Total Stock Left: @product.Stock
+                                                        </MudText>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Outlined">
+                                                            Out of Stock
+                                                        </MudChip>
+                                                    </div>
+                                                </div>
+                                            </MudCardContent>
+                                        </MudCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                        else
+                        {
+                            <div class="text-center pa-8">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Color="Color.Success" Class="mb-3" />
+                                <MudText Typo="Typo.h5" Class="mb-2">No Out of Stock Items</MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Secondary">All products are currently in stock</MudText>
+                            </div>
+                        }
+                    </MudCardContent>
+                    
+                    <MudCardActions Style="flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                        <MudButton OnClick="CloseOutOfStockModal" Variant="Variant.Text" Color="Color.Secondary" Elevation="0">Close</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </div>
+        </MudOverlay>
+    }
 }
 
 @code {
-    private bool _isAddProductDialogOpen;
+    private bool _isAddProductDialogOpen = false;
     private bool _isSaving;
     private Product _newProduct = new Product();
     private List<Product> _products = [];
     private List<Activity> _recentActivities = [];
     private bool _showAllActivities = false;
+    private bool _isLowStockModalOpen = false;
+    private bool _isOutOfStockModalOpen = false;
+    private List<Product> _lowStockProducts = new();
+    private List<Product> _outOfStockProducts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -315,13 +443,40 @@ else
 
     private void OpenAddProductDialog()
     {
-        _newProduct = new Product();
         _isAddProductDialogOpen = true;
+        _newProduct = new Product();
+        StateHasChanged();
+    }
+
+    private void OpenLowStockModal()
+    {
+        _lowStockProducts = _products.Where(p => p.Status == "Low stock").ToList();
+        _isLowStockModalOpen = true;
+        StateHasChanged();
+    }
+
+    private void OpenOutOfStockModal()
+    {
+        _outOfStockProducts = _products.Where(p => p.Status == "Out of stock").ToList();
+        _isOutOfStockModalOpen = true;
+        StateHasChanged();
     }
 
     private void CloseModal()
     {
         _isAddProductDialogOpen = false;
+        StateHasChanged();
+    }
+
+    private void CloseLowStockModal()
+    {
+        _isLowStockModalOpen = false;
+        StateHasChanged();
+    }
+
+    private void CloseOutOfStockModal()
+    {
+        _isOutOfStockModalOpen = false;
         StateHasChanged();
     }
 
@@ -443,21 +598,6 @@ else
     {
         _showAllActivities = false;
         StateHasChanged();
-    }
-
-    private void OpenOutOfStockReport()
-    {
-        var outOfStockProducts = _products.Where(p => p.Status == "Out of stock").ToList();
-        
-        if (outOfStockProducts.Any())
-        {
-            var productList = string.Join("\n", outOfStockProducts.Select(p => $"- {p.Name} ({p.Category})"));
-            ShowCenteredNotification($"Out of Stock Products ({outOfStockProducts.Count}):\n{productList}", Severity.Error);
-        }
-        else
-        {
-            ShowCenteredNotification("No products are currently out of stock!", Severity.Success);
-        }
     }
 
     private string GetTimeAgo(DateTime timestamp)

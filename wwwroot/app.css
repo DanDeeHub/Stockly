@@ -122,4 +122,61 @@
     filter: none !important;
     -webkit-box-shadow: none !important;
     -moz-box-shadow: none !important;
+}
+
+/* Activity card styling for admin view */
+.activity-card {
+    transition: all 0.2s ease-in-out;
+    border: 1px solid var(--mud-palette-lines-default);
+}
+
+.activity-card:hover {
+    background-color: var(--mud-palette-surface-hover);
+    transform: translateY(-1px);
+}
+
+.activity-card .mud-card-content {
+    padding: 16px;
+}
+
+/* Responsive adjustments for activity cards */
+@media (max-width: 768px) {
+    .activity-card .mud-card-content {
+        padding: 12px;
+    }
+    
+    .activity-card .d-flex.align-center {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .activity-card .text-right {
+        text-align: left !important;
+        margin-top: 8px;
+    }
+}
+
+/* Custom styling for delete confirmation dialog */
+.mud-dialog .mud-dialog-actions .mud-button {
+    text-transform: uppercase !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.5px !important;
+}
+
+.mud-dialog .mud-dialog-actions .mud-button[data-mud-button="true"]:first-child {
+    color: var(--mud-palette-text-secondary) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.mud-dialog .mud-dialog-actions .mud-button[data-mud-button="true"]:last-child {
+    background-color: #9c27b0 !important;
+    border-color: #9c27b0 !important;
+    color: white !important;
+    box-shadow: none !important;
+}
+
+.mud-dialog .mud-dialog-actions .mud-button[data-mud-button="true"]:last-child:hover {
+    background-color: #7b1fa2 !important;
+    border-color: #7b1fa2 !important;
 } 
