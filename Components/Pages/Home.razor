@@ -54,29 +54,29 @@ else
             <MudItem xs="12" md="6">
                 <MudCard Elevation="0" Class="h-100">
                     <MudCardContent>
-                        <MudText Typo="Typo.h6" Class="mb-3">Product</MudText>
-                        <MudText Typo="Typo.h4" Class="mb-4">2379</MudText>
-                        
-                        <!-- Progress Bar for Product Status -->
-                        <div class="mb-3">
-                            <div class="d-flex justify-space-between align-center mb-2">
-                                <MudText Typo="Typo.body2">In stock: 1452</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Success">61%</MudText>
-                            </div>
-                            <MudProgressLinear Value="61" Color="Color.Success" Class="mb-3" />
-                            
-                            <div class="d-flex justify-space-between align-center mb-2">
-                                <MudText Typo="Typo.body2">Low stock: 365</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Warning">15%</MudText>
-                            </div>
-                            <MudProgressLinear Value="15" Color="Color.Warning" Class="mb-3" />
-                            
-                            <div class="d-flex justify-space-between align-center mb-2">
-                                <MudText Typo="Typo.body2">Out of stock: 186</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Error">8%</MudText>
-                            </div>
-                            <MudProgressLinear Value="8" Color="Color.Error" />
-                        </div>
+                                                 <MudText Typo="Typo.h6" Class="mb-3">Product</MudText>
+                         <MudText Typo="Typo.h4" Class="mb-4">@TotalProducts</MudText>
+                         
+                         <!-- Progress Bar for Product Status -->
+                         <div class="mb-3">
+                             <div class="d-flex justify-space-between align-center mb-2">
+                                 <MudText Typo="Typo.body2">In stock: @InStockCount</MudText>
+                                 <MudText Typo="Typo.body2" Color="Color.Success">@InStockPercentage%</MudText>
+                             </div>
+                             <MudProgressLinear Value="@InStockPercentage" Color="Color.Success" Class="mb-3" />
+                             
+                             <div class="d-flex justify-space-between align-center mb-2">
+                                 <MudText Typo="Typo.body2">Low stock: @LowStockCount</MudText>
+                                 <MudText Typo="Typo.body2" Color="Color.Warning">@LowStockPercentage%</MudText>
+                             </div>
+                             <MudProgressLinear Value="@LowStockPercentage" Color="Color.Warning" Class="mb-3" />
+                             
+                             <div class="d-flex justify-space-between align-center mb-2">
+                                 <MudText Typo="Typo.body2">Out of stock: @OutOfStockCount</MudText>
+                                 <MudText Typo="Typo.body2" Color="Color.Error">@OutOfStockPercentage%</MudText>
+                             </div>
+                             <MudProgressLinear Value="@OutOfStockPercentage" Color="Color.Error" />
+                         </div>
                         
                         <!-- Additional spacing to match height -->
                         <div style="margin-top: auto;">
@@ -145,23 +145,13 @@ else
                         <MudText Typo="Typo.h5">Quick Actions</MudText>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudGrid>
-                            <MudItem xs="12" sm="6" md="3">
-                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" Class="mb-2" OnClick="OpenAddProductDialog">Add New Product</MudButton>
-                            </MudItem>
-                            
-                            <MudItem xs="12" sm="6" md="3">
-                                <MudButton Variant="Variant.Outlined" Color="Color.Info" FullWidth="true" StartIcon="@Icons.Material.Filled.Inventory" Class="mb-2">Start Count</MudButton>
-                            </MudItem>
-                            
-                            <MudItem xs="12" sm="6" md="3">
-                                <MudButton Variant="Variant.Outlined" Color="Color.Warning" FullWidth="true" StartIcon="@Icons.Material.Filled.Warning" Class="mb-2">Low Stock Report</MudButton>
-                            </MudItem>
-                            
-                            <MudItem xs="12" sm="6" md="3">
-                                <MudButton Variant="Variant.Outlined" Color="Color.Success" FullWidth="true" StartIcon="@Icons.Material.Filled.Download" Class="mb-2">Export Data</MudButton>
-                            </MudItem>
-                        </MudGrid>
+                        <div class="d-flex flex-wrap gap-2">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProductDialog" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Add New Product</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Inventory" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Start Count</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Low Stock Report</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="OpenOutOfStockReport" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Out of Stock</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Download" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Export Data</MudButton>
+                        </div>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -335,6 +325,17 @@ else
         });
     }
 
+    // Product statistics computed properties
+    private int TotalProducts => _products.Count;
+    
+    private int InStockCount => _products.Count(p => p.Status == "In stock");
+    private int LowStockCount => _products.Count(p => p.Status == "Low stock");
+    private int OutOfStockCount => _products.Count(p => p.Status == "Out of stock");
+    
+    private int InStockPercentage => TotalProducts > 0 ? (int)Math.Round((double)InStockCount / TotalProducts * 100) : 0;
+    private int LowStockPercentage => TotalProducts > 0 ? (int)Math.Round((double)LowStockCount / TotalProducts * 100) : 0;
+    private int OutOfStockPercentage => TotalProducts > 0 ? (int)Math.Round((double)OutOfStockCount / TotalProducts * 100) : 0;
+
     private List<string> AvailableCategories => _products.Select(p => p.Category).Distinct().ToList();
 
     private async Task<IEnumerable<string>> SearchCategories(string value, CancellationToken cancellationToken)
@@ -355,5 +356,20 @@ else
         }
 
         return matchingCategories;
+    }
+
+    private void OpenOutOfStockReport()
+    {
+        var outOfStockProducts = _products.Where(p => p.Status == "Out of stock").ToList();
+        
+        if (outOfStockProducts.Any())
+        {
+            var productList = string.Join("\n", outOfStockProducts.Select(p => $"- {p.Name} ({p.Category})"));
+            ShowCenteredNotification($"Out of Stock Products ({outOfStockProducts.Count}):\n{productList}", Severity.Error);
+        }
+        else
+        {
+            ShowCenteredNotification("No products are currently out of stock!", Severity.Success);
+        }
     }
 }
