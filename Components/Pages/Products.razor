@@ -110,7 +110,10 @@
                             <MudTextField @bind-Value="_newProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField @bind-Value="_newProduct.Category" Label="Category" Variant="Variant.Outlined" Required="true" />
+                            <MudAutocomplete T="string" @bind-Value="_newProduct.Category" Label="Category" Variant="Variant.Outlined" Required="true" 
+                                             SearchFunc="SearchCategories" ToStringFunc="@(category => category)" 
+                                             allowCustomValue="true"
+                                             MaxItems="5" />
                         </MudItem>
                         <MudItem xs="12">
                             <MudNumericField @bind-Value="_newProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
@@ -165,7 +168,10 @@
                             <MudTextField @bind-Value="_editingProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudTextField @bind-Value="_editingProduct.Category" Label="Category" Variant="Variant.Outlined" Required="true" />
+                            <MudAutocomplete T="string" @bind-Value="_editingProduct.Category" Label="Category" Variant="Variant.Outlined" Required="true" 
+                                             SearchFunc="SearchCategories" ToStringFunc="@(category => category)" 
+                                             allowCustomValue="true"
+                                             MaxItems="5" />
                         </MudItem>
                         <MudItem xs="12">
                             <MudNumericField @bind-Value="_editingProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
@@ -528,4 +534,27 @@
     }
 
     private List<string> AvailableCategories => _products.Select(p => p.Category).Distinct().ToList();
+
+    private async Task<IEnumerable<string>> SearchCategories(string value, CancellationToken cancellationToken)
+    {
+        // If no search value, return all categories
+        if (string.IsNullOrEmpty(value))
+            return AvailableCategories;
+
+        // Get matching categories
+        var matchingCategories = AvailableCategories
+            .Where(category => category.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // If the typed value is not in the list and it's not empty, add it as a custom option
+        if (!string.IsNullOrEmpty(value) && !matchingCategories.Contains(value))
+        {
+            matchingCategories.Add(value);
+        }
+
+        return matchingCategories;
+    }
+
+
+
 }
