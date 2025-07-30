@@ -372,6 +372,12 @@ else
     private bool _isOutOfStockModalOpen = false;
     private List<Product> _lowStockProducts = new();
     private List<Product> _outOfStockProducts = new();
+    
+    // Caching variables
+    private static List<Product> _cachedProducts = [];
+    private static List<Activity> _cachedActivities = [];
+    private static DateTime _lastCacheUpdate = DateTime.MinValue;
+    private static readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5); // Cache for 5 minutes
 
     protected override async Task OnInitializedAsync()
     {
@@ -381,8 +387,27 @@ else
         }
         else
         {
-            await LoadProducts();
-            await LoadRecentActivities();
+            // Use cached data if available and not expired
+            if (_cachedProducts.Any() && _cachedActivities.Any() && 
+                DateTime.Now - _lastCacheUpdate < _cacheExpiration)
+            {
+                _products = _cachedProducts;
+                _recentActivities = _cachedActivities;
+                StateHasChanged(); // Show cached data immediately
+                
+                // Load fresh data in background without blocking
+                _ = Task.Run(async () => 
+                {
+                    await LoadProducts();
+                    await LoadRecentActivities();
+                });
+            }
+            else
+            {
+                // No valid cache, load data normally
+                await LoadProducts();
+                await LoadRecentActivities();
+            }
         }
     }
 
@@ -392,6 +417,8 @@ else
     {
         try
         {
+            // Clear cache to force fresh data load
+            ClearCache();
             await LoadProducts();
             await LoadRecentActivities();
             ShowCenteredNotification("Dashboard data refreshed successfully", Severity.Success);
@@ -406,6 +433,13 @@ else
         }
     }
 
+    private void ClearCache()
+    {
+        _cachedProducts.Clear();
+        _cachedActivities.Clear();
+        _lastCacheUpdate = DateTime.MinValue;
+    }
+
     private async Task LoadProducts()
     {
         try
@@ -414,17 +448,20 @@ else
             var connectionTest = await FirebaseService.TestConnectionAsync();
             if (!connectionTest)
             {
-                ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error);
+                await InvokeAsync(() => ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error));
                 return;
             }
             
             _products = await FirebaseService.GetProductsAsync();
+            _cachedProducts = _products; // Cache the loaded products
+            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
+            await InvokeAsync(StateHasChanged); // Update UI with fresh data on UI thread
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error in LoadProducts: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
-            ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error);
+            await InvokeAsync(() => ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error));
         }
     }
 
@@ -433,11 +470,14 @@ else
         try
         {
             _recentActivities = await FirebaseService.GetRecentActivitiesAsync(24);
+            _cachedActivities = _recentActivities; // Cache the loaded activities
+            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
+            await InvokeAsync(StateHasChanged); // Update UI with fresh data on UI thread
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading recent activities: {ex.Message}");
-            ShowCenteredNotification($"Error loading activities: {ex.Message}", Severity.Error);
+            await InvokeAsync(() => ShowCenteredNotification($"Error loading activities: {ex.Message}", Severity.Error));
         }
     }
 
