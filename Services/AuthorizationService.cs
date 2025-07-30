@@ -21,7 +21,7 @@ namespace Stockly.Services
             var result = pageName.ToLower() switch
             {
                 "home" => true, // Everyone can access home
-                "products" => true, // Everyone can access products
+                "products" => _userState.Role == "admin", // Only Admin can access products
                 "inventory" => true, // Everyone can access inventory
                 "dashboard" => true, // Everyone can access dashboard
                 "adminview" => _userState.Role == "admin",

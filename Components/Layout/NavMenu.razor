@@ -25,8 +25,11 @@
         <MudNavLink Href="ClosingInventory" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Lock">Closing Shift</MudNavLink>
     }
     
-    <!-- Products - Available to all authenticated users -->
-    <MudNavLink Href="Products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.List">Products</MudNavLink>
+    <!-- Products - Only for admin role -->
+    @if (UserState.Role == "admin")
+    {
+        <MudNavLink Href="Products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Outlined.List">Products</MudNavLink>
+    }
     
     <div style="margin-top: auto;">
         @if (UserState.IsAuthenticated)

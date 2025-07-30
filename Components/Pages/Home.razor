@@ -2,6 +2,8 @@
 @using Stockly.Services
 @inject UserStateService UserState
 @inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject FirebaseService FirebaseService
 
 <PageTitle>Home</PageTitle>
 
@@ -145,7 +147,7 @@ else
                     <MudCardContent>
                         <MudGrid>
                             <MudItem xs="12" sm="6" md="3">
-                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" Class="mb-2">Add New Item</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" Class="mb-2" OnClick="OpenAddProductDialog">Add New Product</MudButton>
                             </MudItem>
                             
                             <MudItem xs="12" sm="6" md="3">
@@ -165,14 +167,193 @@ else
             </MudItem>
         </MudGrid>
     </div>
+    
+    <!-- Add Product Modal -->
+    @if (_isAddProductDialogOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+            <MudCard Style="width: 95%; max-width: 400px; max-height: 85vh; overflow-y: auto; margin: 0 auto;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative;" Class="pa-2 pa-sm-4">
+                    <MudText Typo="Typo.h6">Add New Product</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                  OnClick="CloseModal" 
+                                  Size="Size.Small" 
+                                  Color="Color.Inherit"
+                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                </MudCardHeader>
+                
+                <MudCardContent Class="pa-2 pa-sm-4">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_newProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudAutocomplete T="string" @bind-Value="_newProduct.Category" Label="Category" Variant="Variant.Outlined" Required="true" 
+                                             SearchFunc="SearchCategories" ToStringFunc="@(category => category)" 
+                                             allowCustomValue="true"
+                                             MaxItems="5" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="_newProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="_newProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect @bind-Value="_newProduct.Status" Label="Status" Variant="Variant.Outlined" Required="true">
+                                <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
+                                <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
+                                <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                
+                <MudCardActions Class="justify-start pa-2 pa-sm-4">
+                    <MudButton OnClick="CloseModal" Variant="Variant.Text" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
+                    <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Save Product</span>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudOverlay>
+    }
 }
 
 @code {
-    protected override void OnInitialized()
+    private bool _isAddProductDialogOpen;
+    private bool _isSaving;
+    private Product _newProduct = new Product();
+    private List<Product> _products = [];
+
+    protected override async Task OnInitializedAsync()
     {
         if (!UserState.IsAuthenticated)
         {
             Navigation.NavigateTo("/Login");
         }
+        else
+        {
+            await LoadProducts();
+        }
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            // Test Firebase connection first
+            var connectionTest = await FirebaseService.TestConnectionAsync();
+            if (!connectionTest)
+            {
+                ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error);
+                return;
+            }
+            
+            _products = await FirebaseService.GetProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in LoadProducts: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void OpenAddProductDialog()
+    {
+        _newProduct = new Product();
+        _isAddProductDialogOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        _isAddProductDialogOpen = false;
+        StateHasChanged();
+    }
+
+    private async Task SaveProduct()
+    {
+        if (string.IsNullOrEmpty(_newProduct.Name) || string.IsNullOrEmpty(_newProduct.Category))
+        {
+            ShowCenteredNotification("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            _isSaving = true;
+            StateHasChanged();
+
+            // Set status color based on status
+            _newProduct.StatusColor = _newProduct.Status switch
+            {
+                "In stock" => Color.Success,
+                "Low stock" => Color.Warning,
+                "Out of stock" => Color.Error,
+                _ => Color.Default
+            };
+
+            var success = await FirebaseService.CreateProductAsync(_newProduct);
+            if (success)
+            {
+                // Reload products to get the new product with its ID
+                await LoadProducts();
+                _isAddProductDialogOpen = false;
+                ShowCenteredNotification($"Product '{_newProduct.Name}' added successfully", Severity.Success);
+            }
+            else
+            {
+                ShowCenteredNotification($"Failed to add product '{_newProduct.Name}'", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCenteredNotification($"Error saving product: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowCenteredNotification(string message, Severity severity)
+    {
+        Snackbar.Add(message, severity, config =>
+        {
+            config.RequireInteraction = false;
+            config.ShowCloseIcon = true;
+            config.VisibleStateDuration = 3000;
+        });
+    }
+
+    private List<string> AvailableCategories => _products.Select(p => p.Category).Distinct().ToList();
+
+    private async Task<IEnumerable<string>> SearchCategories(string value, CancellationToken cancellationToken)
+    {
+        // If no search value, return all categories
+        if (string.IsNullOrEmpty(value))
+            return AvailableCategories;
+
+        // Get matching categories
+        var matchingCategories = AvailableCategories
+            .Where(category => category.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // If the typed value is not in the list and it's not empty, add it as a custom option
+        if (!string.IsNullOrEmpty(value) && !matchingCategories.Contains(value))
+        {
+            matchingCategories.Add(value);
+        }
+
+        return matchingCategories;
     }
 }
