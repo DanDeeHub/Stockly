@@ -21,15 +21,11 @@
         <!-- Search and Filter Section -->
         <MudCard Elevation="0" Class="mb-3 mb-sm-4">
             <MudCardContent Class="pa-2 pa-sm-4">
-                <MudGrid>
-                    <MudItem xs="12" sm="6" md="9">
-                        <MudTextField @bind-Value="_searchString" Placeholder="Search products or categories..." Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Style="height: 40px;" />
-                    </MudItem>
-                    
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FilterList" Size="Size.Small" Style="height: 40px;" FullWidth="true" OnClick="OpenFilterModal">Filter</MudButton>
-                    </MudItem>
-                </MudGrid>
+                                 <div class="d-flex gap-2 align-center" style="align-items: center;">
+                     <MudTextField @bind-Value="_searchString" Placeholder="Search products or categories..." Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Style="height: 40px; flex: 1; min-height: 40px; max-height: 40px; line-height: 40px;" />
+                     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FilterList" Size="Size.Small" Style="height: 40px; min-width: 100px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="OpenFilterModal">Filter</MudButton>
+                     <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Style="height: 40px; width: 40px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="ClearAllFilters" title="Clear all filters" Color="Color.Secondary" Variant="Variant.Outlined"></MudIconButton>
+                 </div>
             </MudCardContent>
         </MudCard>
         
@@ -222,46 +218,45 @@
                 
                 <MudCardContent Class="pa-2 pa-sm-4">
                     <MudGrid>
-                        <MudItem xs="12">
-                            <MudText Typo="Typo.subtitle1" Class="mb-2">Sort By</MudText>
-                            <MudSelect ShrinkLabel @bind-Value="_sortOrder" Label="Sort Order" Variant="Variant.Outlined" FullWidth="true">
-                                <MudSelectItem Value="@("name_asc")">Name Ascending</MudSelectItem>
-                                <MudSelectItem Value="@("name_desc")">Name Descending</MudSelectItem>
-                                <MudSelectItem Value="@("price_asc")">Price Low to High</MudSelectItem>
-                                <MudSelectItem Value="@("price_desc")">Price High to Low</MudSelectItem>
-                                <MudSelectItem Value="@("stock_asc")">Stock Low to High</MudSelectItem>
-                                <MudSelectItem Value="@("stock_desc")">Stock High to Low</MudSelectItem>
-                            </MudSelect>
-                        </MudItem>
-                        
-                        <MudItem xs="12">
-                            <MudText Typo="Typo.subtitle1" Class="mb-2">Category</MudText>
-                            <MudSelect ShrinkLabel @bind-Value="_selectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true">
-                                <MudSelectItem Value="@("")">All Categories</MudSelectItem>
-                                @foreach (var category in AvailableCategories)
-                                {
-                                    <MudSelectItem Value="@category">@category</MudSelectItem>
-                                }
-                            </MudSelect>
-                        </MudItem>
-                        
-                        <MudItem xs="12">
-                            <MudText Typo="Typo.subtitle1" Class="mb-2">Stock Status</MudText>
-                            <MudSelect ShrinkLabel @bind-Value="_selectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true">
-                                <MudSelectItem Value="@("")">All Status</MudSelectItem>
-                                <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
-                            </MudSelect>
-                        </MudItem>
+                                                 <MudItem xs="12">
+                             <MudText Typo="Typo.subtitle1" Class="mb-2">Sort By</MudText>
+                             <MudSelect ShrinkLabel @bind-Value="_tempSortOrder" Label="Sort Order" Variant="Variant.Outlined" FullWidth="true">
+                                 <MudSelectItem Value="@("name_asc")">Name Ascending</MudSelectItem>
+                                 <MudSelectItem Value="@("name_desc")">Name Descending</MudSelectItem>
+                                 <MudSelectItem Value="@("price_asc")">Price Low to High</MudSelectItem>
+                                 <MudSelectItem Value="@("price_desc")">Price High to Low</MudSelectItem>
+                                 <MudSelectItem Value="@("stock_asc")">Stock Low to High</MudSelectItem>
+                                 <MudSelectItem Value="@("stock_desc")">Stock High to Low</MudSelectItem>
+                             </MudSelect>
+                         </MudItem>
+                         
+                         <MudItem xs="12">
+                             <MudText Typo="Typo.subtitle1" Class="mb-2">Category</MudText>
+                             <MudSelect ShrinkLabel @bind-Value="_tempSelectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true">
+                                 <MudSelectItem Value="@("")">All Categories</MudSelectItem>
+                                 @foreach (var category in AvailableCategories)
+                                 {
+                                     <MudSelectItem Value="@category">@category</MudSelectItem>
+                                 }
+                             </MudSelect>
+                         </MudItem>
+                         
+                         <MudItem xs="12">
+                             <MudText Typo="Typo.subtitle1" Class="mb-2">Stock Status</MudText>
+                             <MudSelect ShrinkLabel @bind-Value="_tempSelectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true">
+                                 <MudSelectItem Value="@("")">All Status</MudSelectItem>
+                                 <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
+                                 <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
+                                 <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
+                             </MudSelect>
+                         </MudItem>
                     </MudGrid>
                 </MudCardContent>
                 
-                <MudCardActions Class="justify-start pa-2 pa-sm-4">
-                    <MudButton OnClick="ClearFilters" Variant="Variant.Text" Class="mr-2">Clear All</MudButton>
-                    <MudButton OnClick="CloseFilterModal" Variant="Variant.Text" Class="mr-2">Cancel</MudButton>
-                    <MudButton OnClick="ApplyFilters" Variant="Variant.Filled" Color="Color.Primary">Apply Filters</MudButton>
-                </MudCardActions>
+                                 <MudCardActions Class="justify-start pa-2 pa-sm-4">
+                     <MudButton OnClick="CloseFilterModal" Variant="Variant.Text" Class="mr-2">Cancel</MudButton>
+                     <MudButton OnClick="ApplyFilters" Variant="Variant.Filled" Color="Color.Primary">Apply Filters</MudButton>
+                 </MudCardActions>
             </MudCard>
         </MudOverlay>
     }
@@ -280,6 +275,12 @@
     private string _selectedStatus = "";
     private bool _isEditProductDialogOpen;
     private Product _editingProduct;
+    
+    // Separate filter state for the modal
+    private string _tempSearchString = "";
+    private string _tempSortOrder = "name_asc";
+    private string _tempSelectedCategory = "";
+    private string _tempSelectedStatus = "";
 
     public Products() {
         _isAddProductDialogOpen = false;
@@ -351,7 +352,18 @@
 
     private void EditProduct(Product product)
     {
-        _editingProduct = product;
+        // Create a copy of the product to avoid modifying the original until saved
+        _editingProduct = new Product
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Category = product.Category,
+            Stock = product.Stock,
+            Price = product.Price,
+            Status = product.Status,
+            StatusColor = product.StatusColor,
+            CreatedAt = product.CreatedAt
+        };
         _isEditProductDialogOpen = true;
     }
 
@@ -476,7 +488,18 @@
             var success = await FirebaseService.UpdateProductAsync(_editingProduct);
             if (success)
             {
-                await LoadProducts();
+                // Find and update the original product in the list
+                var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
+                if (originalProduct != null)
+                {
+                    originalProduct.Name = _editingProduct.Name;
+                    originalProduct.Category = _editingProduct.Category;
+                    originalProduct.Stock = _editingProduct.Stock;
+                    originalProduct.Price = _editingProduct.Price;
+                    originalProduct.Status = _editingProduct.Status;
+                    originalProduct.StatusColor = _editingProduct.StatusColor;
+                }
+                
                 _isEditProductDialogOpen = false;
                 ShowCenteredNotification($"Product '{_editingProduct.Name}' updated successfully", Severity.Success);
             }
@@ -508,6 +531,11 @@
 
     private void OpenFilterModal()
     {
+        // Initialize temp values with current filter values
+        _tempSearchString = _searchString;
+        _tempSortOrder = _sortOrder;
+        _tempSelectedCategory = _selectedCategory;
+        _tempSelectedStatus = _selectedStatus;
         _isFilterModalOpen = true;
         StateHasChanged();
     }
@@ -518,17 +546,27 @@
         StateHasChanged();
     }
 
-    private void ClearFilters()
-    {
-        _searchString = "";
-        _selectedCategory = "";
-        _selectedStatus = "";
-        _sortOrder = "name_asc";
-        StateHasChanged();
-    }
+    
+
+     private void ClearAllFilters()
+     {
+         // Clear all actual filter values immediately
+         _searchString = "";
+         _selectedCategory = "";
+         _selectedStatus = "";
+         _sortOrder = "name_asc";
+         
+         ShowCenteredNotification("All filters cleared", Severity.Info);
+         StateHasChanged();
+     }
 
     private void ApplyFilters()
     {
+        // Apply the temporary filter values to the actual filter values
+        _searchString = _tempSearchString;
+        _sortOrder = _tempSortOrder;
+        _selectedCategory = _tempSelectedCategory;
+        _selectedStatus = _tempSelectedStatus;
         CloseFilterModal();
         ShowCenteredNotification("Filters applied successfully", Severity.Success);
     }
