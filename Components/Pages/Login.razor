@@ -39,6 +39,19 @@
                 }
             </MudButton>
         </MudForm>
+        
+        <!-- Debug Info - Remove this in production -->
+        @if (UserState.IsAuthenticated)
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-2">
+                <MudText Typo="Typo.body2">
+                    <strong>Debug Info:</strong><br/>
+                    User ID: @UserState.CurrentUser?.Id<br/>
+                    Username: @UserState.CurrentUser?.Username<br/>
+                    Role: @UserState.CurrentUser?.Role
+                </MudText>
+            </MudAlert>
+        }
     </div>
 </div>
 
@@ -108,7 +121,11 @@
                 UserState.Login(user);
                 
                 // Save credentials if "Remember Me" is checked
-                await SecureStorage.SaveCredentialsAsync(Username, Password, RememberMe);
+                await SecureStorage.SaveCredentialsAsync(user.Id, Username, Password, RememberMe);
+                
+                // Debug: Log the user ID to console
+                Console.WriteLine($"User logged in with ID: {user.Id}");
+                Console.WriteLine($"Is Guid: {user.Id != Guid.Empty}");
                 
                 Navigation.NavigateTo("/");
             }

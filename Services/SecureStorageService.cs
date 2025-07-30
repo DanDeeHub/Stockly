@@ -18,12 +18,12 @@ namespace Stockly.Services
             _encryptionKey = "StocklySecureKey2024!@#$%^&*()";
         }
 
-        public async Task SaveCredentialsAsync(string username, string password, bool rememberMe = false)
+        public async Task SaveCredentialsAsync(Guid userId, string username, string password, bool rememberMe = false)
         {
             if (!rememberMe)
             {
                 // If not remembering, just store session data
-                await SaveSessionDataAsync(username);
+                await SaveSessionDataAsync(userId, username);
                 return;
             }
 
@@ -31,6 +31,7 @@ namespace Stockly.Services
             {
                 var credentials = new StoredCredentials
                 {
+                    UserId = userId,
                     Username = username,
                     Password = password,
                     StoredAt = DateTime.UtcNow
@@ -77,12 +78,13 @@ namespace Stockly.Services
             }
         }
 
-        public async Task SaveSessionDataAsync(string username)
+        public async Task SaveSessionDataAsync(Guid userId, string username)
         {
             try
             {
                 var sessionData = new SessionData
                 {
+                    UserId = userId,
                     Username = username,
                     SessionStart = DateTime.UtcNow
                 };
@@ -205,6 +207,7 @@ namespace Stockly.Services
 
     public class StoredCredentials
     {
+        public Guid UserId { get; set; } = Guid.Empty;
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public DateTime StoredAt { get; set; }
@@ -212,6 +215,7 @@ namespace Stockly.Services
 
     public class SessionData
     {
+        public Guid UserId { get; set; } = Guid.Empty;
         public string Username { get; set; } = string.Empty;
         public DateTime SessionStart { get; set; }
     }

@@ -78,9 +78,16 @@ namespace Stockly.Services
                     var role = roleKey != null ? userData[roleKey].ToString() : "user";
                     Console.WriteLine($"Retrieved role: '{role}'");
                     
+                    // Try to parse the document ID as Guid, fallback to empty Guid if it's not a valid Guid
+                    Guid userId = Guid.Empty;
+                    if (Guid.TryParse(userDoc.Id, out Guid parsedId))
+                    {
+                        userId = parsedId;
+                    }
+                    
                     return new User
                     {
-                        Id = userDoc.Id,
+                        Id = userId,
                         Username = userData["username"].ToString(),
                         Role = role,
                         Email = userData.ContainsKey("email") ? userData["email"].ToString() : ""
@@ -112,7 +119,8 @@ namespace Stockly.Services
                     return false; // User already exists
                 }
 
-                // Create new user document
+                // Create new user document with Guid as ID
+                var userId = Guid.NewGuid();
                 var userData = new Dictionary<string, object>
                 {
                     { "username", username },
@@ -122,7 +130,7 @@ namespace Stockly.Services
                     { "createdAt", Timestamp.FromDateTime(DateTime.UtcNow) }
                 };
 
-                await usersRef.AddAsync(userData);
+                await usersRef.Document(userId.ToString()).SetAsync(userData);
                 return true;
             }
             catch (Exception ex)
@@ -509,7 +517,7 @@ namespace Stockly.Services
 
     public class User
     {
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; } = Guid.Empty;
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;

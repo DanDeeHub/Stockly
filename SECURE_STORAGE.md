@@ -34,7 +34,7 @@ The main service that handles all secure storage operations:
 
 ```csharp
 // Save credentials with encryption
-await SecureStorage.SaveCredentialsAsync(username, password, rememberMe);
+await SecureStorage.SaveCredentialsAsync(userId, username, password, rememberMe);
 
 // Load saved credentials
 var credentials = await SecureStorage.LoadCredentialsAsync();
