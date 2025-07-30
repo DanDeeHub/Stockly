@@ -90,8 +90,8 @@
     @if (_isAddProductDialogOpen)
     {
         <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
-            <MudCard Style="width: 95%; max-width: 400px; max-height: 85vh; overflow-y: auto; margin: 0 auto;" Class="pa-2 pa-sm-4">
-                <MudCardHeader Style="position: relative;" Class="pa-2 pa-sm-4">
+            <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
                     <MudText Typo="Typo.h6">Add New Product</MudText>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" 
                                   OnClick="CloseModal" 
@@ -100,7 +100,7 @@
                                   Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
                 </MudCardHeader>
                 
-                <MudCardContent Class="pa-2 pa-sm-4">
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
                     <MudGrid>
                         <MudItem xs="12">
                             <MudTextField @bind-Value="_newProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
@@ -115,19 +115,20 @@
                             <MudNumericField @bind-Value="_newProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudNumericField @bind-Value="_newProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
+                            <MudNumericField @bind-Value="_newProduct.LowStockThreshold" Label="Low Stock Threshold" Variant="Variant.Outlined" Required="true" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudSelect @bind-Value="_newProduct.Status" Label="Status" Variant="Variant.Outlined" Required="true">
-                                <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
-                            </MudSelect>
+                            <MudNumericField @bind-Value="_newProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
                         </MudItem>
+                                                 <MudItem xs="12">
+                             <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                                 Status: <MudText Color="@GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold)" Typo="Typo.body2">@GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold)</MudText>
+                             </MudText>
+                         </MudItem>
                     </MudGrid>
                 </MudCardContent>
                 
-                <MudCardActions Class="justify-start pa-2 pa-sm-4">
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
                     <MudButton OnClick="CloseModal" Variant="Variant.Text" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
                     <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
                         @if (_isSaving)
@@ -148,8 +149,8 @@
     @if (_isEditProductDialogOpen)
     {
         <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
-            <MudCard Style="width: 95%; max-width: 400px; max-height: 85vh; overflow-y: auto; margin: 0 auto;" Class="pa-2 pa-sm-4">
-                <MudCardHeader Style="position: relative;" Class="pa-2 pa-sm-4">
+            <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
                     <MudText Typo="Typo.h6">Edit Product</MudText>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" 
                                   OnClick="CloseEditModal" 
@@ -158,7 +159,7 @@
                                   Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
                 </MudCardHeader>
                 
-                <MudCardContent Class="pa-2 pa-sm-4">
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
                     <MudGrid>
                         <MudItem xs="12">
                             <MudTextField @bind-Value="_editingProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
@@ -173,19 +174,20 @@
                             <MudNumericField @bind-Value="_editingProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudNumericField @bind-Value="_editingProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
+                            <MudNumericField @bind-Value="_editingProduct.LowStockThreshold" Label="Low Stock Threshold" Variant="Variant.Outlined" Required="true" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudSelect @bind-Value="_editingProduct.Status" Label="Status" Variant="Variant.Outlined" Required="true">
-                                <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
-                            </MudSelect>
+                            <MudNumericField @bind-Value="_editingProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
                         </MudItem>
+                                                 <MudItem xs="12">
+                             <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                                 Status: <MudText Color="@GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold)" Typo="Typo.body2">@GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold)</MudText>
+                             </MudText>
+                         </MudItem>
                     </MudGrid>
                 </MudCardContent>
                 
-                <MudCardActions Class="justify-start pa-2 pa-sm-4">
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
                     <MudButton OnClick="CloseEditModal" Variant="Variant.Text" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
                     <MudButton OnClick="UpdateProduct" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
                         @if (_isSaving)
@@ -202,12 +204,12 @@
         </MudOverlay>
     }
 
-    <!-- Filter Modal -->
+        <!-- Filter Modal -->
     @if (_isFilterModalOpen)
     {
         <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
-            <MudCard Style="width: 95%; max-width: 500px; max-height: 85vh; overflow-y: auto; margin: 0 auto;" Class="pa-2 pa-sm-4">
-                <MudCardHeader Style="position: relative;" Class="pa-2 pa-sm-4">
+            <MudCard Style="width: 95%; max-width: 500px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
                     <MudText Typo="Typo.h6">Filter Products</MudText>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" 
                                   OnClick="CloseFilterModal" 
@@ -216,7 +218,7 @@
                                   Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
                 </MudCardHeader>
                 
-                <MudCardContent Class="pa-2 pa-sm-4">
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
                     <MudGrid>
                                                  <MudItem xs="12">
                              <MudText Typo="Typo.subtitle1" Class="mb-2">Sort By</MudText>
@@ -230,36 +232,36 @@
                              </MudSelect>
                          </MudItem>
                          
-                         <MudItem xs="12">
-                             <MudText Typo="Typo.subtitle1" Class="mb-2">Category</MudText>
-                             <MudSelect ShrinkLabel @bind-Value="_tempSelectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true">
-                                 <MudSelectItem Value="@("")">All Categories</MudSelectItem>
-                                 @foreach (var category in AvailableCategories)
-                                 {
-                                     <MudSelectItem Value="@category">@category</MudSelectItem>
-                                 }
-                             </MudSelect>
-                         </MudItem>
-                         
-                         <MudItem xs="12">
-                             <MudText Typo="Typo.subtitle1" Class="mb-2">Stock Status</MudText>
-                             <MudSelect ShrinkLabel @bind-Value="_tempSelectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true">
-                                 <MudSelectItem Value="@("")">All Status</MudSelectItem>
-                                 <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
-                                 <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
-                                 <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
-                             </MudSelect>
-                         </MudItem>
-                    </MudGrid>
-                </MudCardContent>
-                
-                                 <MudCardActions Class="justify-start pa-2 pa-sm-4">
+                          <MudItem xs="12">
+                              <MudText Typo="Typo.subtitle1" Class="mb-2">Category</MudText>
+                              <MudSelect ShrinkLabel @bind-Value="_tempSelectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true">
+                                  <MudSelectItem Value="@("")">All Categories</MudSelectItem>
+                                  @foreach (var category in AvailableCategories)
+                                  {
+                                      <MudSelectItem Value="@category">@category</MudSelectItem>
+                                  }
+                              </MudSelect>
+                          </MudItem>
+                          
+                          <MudItem xs="12">
+                              <MudText Typo="Typo.subtitle1" Class="mb-2">Stock Status</MudText>
+                              <MudSelect ShrinkLabel @bind-Value="_tempSelectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true">
+                                  <MudSelectItem Value="@("")">All Status</MudSelectItem>
+                                  <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
+                                  <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
+                                  <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
+                              </MudSelect>
+                          </MudItem>
+                     </MudGrid>
+                 </MudCardContent>
+                 
+                                  <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
                      <MudButton OnClick="CloseFilterModal" Variant="Variant.Text" Class="mr-2">Cancel</MudButton>
                      <MudButton OnClick="ApplyFilters" Variant="Variant.Filled" Color="Color.Primary">Apply Filters</MudButton>
                  </MudCardActions>
-            </MudCard>
-        </MudOverlay>
-    }
+             </MudCard>
+         </MudOverlay>
+     }
 </AuthorizedPageBase>
 
 @code {
@@ -359,6 +361,7 @@
             Name = product.Name,
             Category = product.Category,
             Stock = product.Stock,
+            LowStockThreshold = product.LowStockThreshold,
             Price = product.Price,
             Status = product.Status,
             StatusColor = product.StatusColor,
@@ -424,16 +427,11 @@
             _isSaving = true;
             StateHasChanged();
 
-            // Set status color based on status
-            _newProduct.StatusColor = _newProduct.Status switch
-            {
-                "In stock" => Color.Success,
-                "Low stock" => Color.Warning,
-                "Out of stock" => Color.Error,
-                _ => Color.Default
-            };
+                         // Automatically set status based on stock and threshold
+             _newProduct.Status = GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold);
+             _newProduct.StatusColor = GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold);
 
-            var success = await FirebaseService.CreateProductAsync(_newProduct);
+            var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct);
             if (success)
             {
                 // Reload products to get the new product with its ID
@@ -476,18 +474,16 @@
             _isSaving = true;
             StateHasChanged();
 
-            // Set status color based on status
-            _editingProduct.StatusColor = _editingProduct.Status switch
-            {
-                "In stock" => Color.Success,
-                "Low stock" => Color.Warning,
-                "Out of stock" => Color.Error,
-                _ => Color.Default
-            };
+                         // Automatically set status based on stock and threshold
+             _editingProduct.Status = GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+             _editingProduct.StatusColor = GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold);
 
             var success = await FirebaseService.UpdateProductAsync(_editingProduct);
             if (success)
             {
+                // Check for low stock conditions and create activities
+                await FirebaseService.CheckLowStockAndCreateActivityAsync(_editingProduct);
+                
                 // Find and update the original product in the list
                 var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
                 if (originalProduct != null)
@@ -495,6 +491,7 @@
                     originalProduct.Name = _editingProduct.Name;
                     originalProduct.Category = _editingProduct.Category;
                     originalProduct.Stock = _editingProduct.Stock;
+                    originalProduct.LowStockThreshold = _editingProduct.LowStockThreshold;
                     originalProduct.Price = _editingProduct.Price;
                     originalProduct.Status = _editingProduct.Status;
                     originalProduct.StatusColor = _editingProduct.StatusColor;
@@ -502,6 +499,9 @@
                 
                 _isEditProductDialogOpen = false;
                 ShowCenteredNotification($"Product '{_editingProduct.Name}' updated successfully", Severity.Success);
+                
+                // Reload products to ensure data consistency
+                await LoadProducts();
             }
             else
             {
@@ -573,25 +573,46 @@
 
     private List<string> AvailableCategories => _products.Select(p => p.Category).Distinct().ToList();
 
-    private async Task<IEnumerable<string>> SearchCategories(string value, CancellationToken cancellationToken)
-    {
-        // If no search value, return all categories
-        if (string.IsNullOrEmpty(value))
-            return AvailableCategories;
+         private async Task<IEnumerable<string>> SearchCategories(string value, CancellationToken cancellationToken)
+     {
+         // If no search value, return all categories
+         if (string.IsNullOrEmpty(value))
+             return AvailableCategories;
 
-        // Get matching categories
-        var matchingCategories = AvailableCategories
-            .Where(category => category.Contains(value, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+         // Get matching categories
+         var matchingCategories = AvailableCategories
+             .Where(category => category.Contains(value, StringComparison.OrdinalIgnoreCase))
+             .ToList();
 
-        // If the typed value is not in the list and it's not empty, add it as a custom option
-        if (!string.IsNullOrEmpty(value) && !matchingCategories.Contains(value))
-        {
-            matchingCategories.Add(value);
-        }
+         // If the typed value is not in the list and it's not empty, add it as a custom option
+         if (!string.IsNullOrEmpty(value) && !matchingCategories.Contains(value))
+         {
+             matchingCategories.Add(value);
+         }
 
-        return matchingCategories;
-    }
+         return matchingCategories;
+     }
+
+     // Helper methods for automatic status calculation
+     private string GetStatusText(int stock, int threshold)
+     {
+         if (stock == 0)
+             return "Out of stock";
+         else if (stock <= threshold)
+             return "Low stock";
+         else
+             return "In stock";
+     }
+
+     private Color GetStatusColor(int stock, int threshold)
+     {
+         if (stock == 0)
+             return Color.Error;
+         else if (stock <= threshold)
+             return Color.Warning;
+         else
+             return Color.Success;
+     }
 
 
 

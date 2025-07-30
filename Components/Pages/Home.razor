@@ -17,7 +17,14 @@ else
 {
     <div class="pa-4">
         <!-- Header -->
-        <MudText Typo="Typo.h4" Class="mb-6">Dashboard</MudText>
+        <div class="d-flex justify-space-between align-center mb-6">
+            <MudText Typo="Typo.h4">Dashboard</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                          Color="Color.Primary" 
+                          Variant="Variant.Outlined"
+                          OnClick="RefreshDashboardData"
+                          Title="Refresh Dashboard Data" />
+        </div>
         
         <!-- Main Metrics Row -->
         <MudGrid Class="mb-6">
@@ -93,47 +100,57 @@ else
                 <MudText Typo="Typo.h5">Recent Activity</MudText>
             </MudCardHeader>
             <MudCardContent>
-                <div class="d-flex flex-column gap-3">
-                    <div class="d-flex align-center">
-                        <MudAvatar Size="Size.Small" Color="Color.Success" Class="mr-3">
-                            <MudIcon Icon="@Icons.Material.Filled.Add" />
-                        </MudAvatar>
-                        <div>
-                            <MudText Typo="Typo.body1">New item added: Premium Coffee Beans</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">2 hours ago</MudText>
-                        </div>
+                @if (_recentActivities.Any())
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var activity in _showAllActivities ? _recentActivities : _recentActivities.Take(4))
+                        {
+                            <div class="d-flex align-center">
+                                <MudAvatar Size="Size.Small" Color="@activity.IconColor" Class="mr-3">
+                                    <MudIcon Icon="@activity.Icon" />
+                                </MudAvatar>
+                                <div>
+                                    <MudText Typo="Typo.body1">@activity.Description</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@GetTimeAgo(activity.Timestamp)</MudText>
+                                </div>
+                            </div>
+                        }
                     </div>
                     
-                    <div class="d-flex align-center">
-                        <MudAvatar Size="Size.Small" Color="Color.Warning" Class="mr-3">
-                            <MudIcon Icon="@Icons.Material.Filled.Warning" />
-                        </MudAvatar>
-                        <div>
-                            <MudText Typo="Typo.body1">Low stock alert: Organic Milk</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">4 hours ago</MudText>
+                    @if (_recentActivities.Count > 4)
+                    {
+                        <div class="d-flex justify-center mt-4">
+                            @if (!_showAllActivities)
+                            {
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Primary" 
+                                          StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                                          OnClick="ShowAllActivities"
+                                          Size="Size.Small">
+                                    See More (@(_recentActivities.Count - 4) more)
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Primary" 
+                                          StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
+                                          OnClick="ShowLessActivities"
+                                          Size="Size.Small">
+                                    Show Less
+                                </MudButton>
+                            }
                         </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center pa-4">
+                        <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Large" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6" Class="mt-2">No recent activity</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Activities will appear here as they occur</MudText>
                     </div>
-                    
-                    <div class="d-flex align-center">
-                        <MudAvatar Size="Size.Small" Color="Color.Info" Class="mr-3">
-                            <MudIcon Icon="@Icons.Material.Filled.Inventory" />
-                        </MudAvatar>
-                        <div>
-                            <MudText Typo="Typo.body1">Inventory count completed: Freezer Section</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">6 hours ago</MudText>
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex align-center">
-                        <MudAvatar Size="Size.Small" Color="Color.Error" Class="mr-3">
-                            <MudIcon Icon="@Icons.Material.Filled.Remove" />
-                        </MudAvatar>
-                        <div>
-                            <MudText Typo="Typo.body1">Out of stock: Fresh Bread</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">8 hours ago</MudText>
-                        </div>
-                    </div>
-                </div>
+                }
             </MudCardContent>
         </MudCard>
         
@@ -162,8 +179,8 @@ else
     @if (_isAddProductDialogOpen)
     {
         <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
-            <MudCard Style="width: 95%; max-width: 400px; max-height: 85vh; overflow-y: auto; margin: 0 auto;" Class="pa-2 pa-sm-4">
-                <MudCardHeader Style="position: relative;" Class="pa-2 pa-sm-4">
+            <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
                     <MudText Typo="Typo.h6">Add New Product</MudText>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" 
                                   OnClick="CloseModal" 
@@ -172,7 +189,7 @@ else
                                   Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
                 </MudCardHeader>
                 
-                <MudCardContent Class="pa-2 pa-sm-4">
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
                     <MudGrid>
                         <MudItem xs="12">
                             <MudTextField @bind-Value="_newProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
@@ -187,19 +204,20 @@ else
                             <MudNumericField @bind-Value="_newProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
                         </MudItem>
                         <MudItem xs="12">
+                            <MudNumericField @bind-Value="_newProduct.LowStockThreshold" Label="Low Stock Threshold" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
                             <MudNumericField @bind-Value="_newProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
                         </MudItem>
                         <MudItem xs="12">
-                            <MudSelect @bind-Value="_newProduct.Status" Label="Status" Variant="Variant.Outlined" Required="true">
-                                <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
-                            </MudSelect>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                                Status: <MudText Color="@GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold)" Typo="Typo.body2">@GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold)</MudText>
+                            </MudText>
                         </MudItem>
                     </MudGrid>
                 </MudCardContent>
                 
-                <MudCardActions Class="justify-start pa-2 pa-sm-4">
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
                     <MudButton OnClick="CloseModal" Variant="Variant.Text" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
                     <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
                         @if (_isSaving)
@@ -222,6 +240,8 @@ else
     private bool _isSaving;
     private Product _newProduct = new Product();
     private List<Product> _products = [];
+    private List<Activity> _recentActivities = [];
+    private bool _showAllActivities = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -232,6 +252,27 @@ else
         else
         {
             await LoadProducts();
+            await LoadRecentActivities();
+        }
+    }
+
+
+
+    private async Task RefreshDashboardData()
+    {
+        try
+        {
+            await LoadProducts();
+            await LoadRecentActivities();
+            ShowCenteredNotification("Dashboard data refreshed successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowCenteredNotification($"Error refreshing dashboard: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            StateHasChanged();
         }
     }
 
@@ -254,6 +295,19 @@ else
             Console.WriteLine($"Error in LoadProducts: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
             ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task LoadRecentActivities()
+    {
+        try
+        {
+            _recentActivities = await FirebaseService.GetRecentActivitiesAsync(24);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading recent activities: {ex.Message}");
+            ShowCenteredNotification($"Error loading activities: {ex.Message}", Severity.Error);
         }
     }
 
@@ -282,20 +336,16 @@ else
             _isSaving = true;
             StateHasChanged();
 
-            // Set status color based on status
-            _newProduct.StatusColor = _newProduct.Status switch
-            {
-                "In stock" => Color.Success,
-                "Low stock" => Color.Warning,
-                "Out of stock" => Color.Error,
-                _ => Color.Default
-            };
+            // Automatically set status based on stock and threshold
+            _newProduct.Status = GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold);
+            _newProduct.StatusColor = GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold);
 
-            var success = await FirebaseService.CreateProductAsync(_newProduct);
+            var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct);
             if (success)
             {
-                // Reload products to get the new product with its ID
+                // Reload products and activities
                 await LoadProducts();
+                await LoadRecentActivities();
                 _isAddProductDialogOpen = false;
                 ShowCenteredNotification($"Product '{_newProduct.Name}' added successfully", Severity.Success);
             }
@@ -360,6 +410,39 @@ else
         return matchingCategories;
     }
 
+    // Helper methods for automatic status calculation
+    private string GetStatusText(int stock, int threshold)
+    {
+        if (stock == 0)
+            return "Out of stock";
+        else if (stock <= threshold)
+            return "Low stock";
+        else
+            return "In stock";
+    }
+
+    private Color GetStatusColor(int stock, int threshold)
+    {
+        if (stock == 0)
+            return Color.Error;
+        else if (stock <= threshold)
+            return Color.Warning;
+        else
+            return Color.Success;
+    }
+
+    private void ShowAllActivities()
+    {
+        _showAllActivities = true;
+        StateHasChanged();
+    }
+
+    private void ShowLessActivities()
+    {
+        _showAllActivities = false;
+        StateHasChanged();
+    }
+
     private void OpenOutOfStockReport()
     {
         var outOfStockProducts = _products.Where(p => p.Status == "Out of stock").ToList();
@@ -372,6 +455,31 @@ else
         else
         {
             ShowCenteredNotification("No products are currently out of stock!", Severity.Success);
+        }
+    }
+
+    private string GetTimeAgo(DateTime timestamp)
+    {
+        var timeSpan = DateTime.UtcNow - timestamp;
+        
+        if (timeSpan.TotalDays >= 1)
+        {
+            var days = (int)timeSpan.TotalDays;
+            return $"{days} day{(days == 1 ? "" : "s")} ago";
+        }
+        else if (timeSpan.TotalHours >= 1)
+        {
+            var hours = (int)timeSpan.TotalHours;
+            return $"{hours} hour{(hours == 1 ? "" : "s")} ago";
+        }
+        else if (timeSpan.TotalMinutes >= 1)
+        {
+            var minutes = (int)timeSpan.TotalMinutes;
+            return $"{minutes} minute{(minutes == 1 ? "" : "s")} ago";
+        }
+        else
+        {
+            return "Just now";
         }
     }
 }

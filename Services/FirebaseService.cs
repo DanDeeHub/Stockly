@@ -156,6 +156,7 @@ namespace Stockly.Services
                         Stock = data.ContainsKey("stock") ? Convert.ToInt32(data["stock"]) : 0,
                         Status = data.ContainsKey("status") ? data["status"].ToString() : "",
                         Price = data.ContainsKey("price") ? Convert.ToDecimal(data["price"]) : 0,
+                        LowStockThreshold = data.ContainsKey("lowStockThreshold") ? Convert.ToInt32(data["lowStockThreshold"]) : 10,
                         CreatedAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow
                     };
                     
@@ -197,6 +198,7 @@ namespace Stockly.Services
                     { "stock", product.Stock },
                     { "status", product.Status },
                     { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
+                    { "lowStockThreshold", product.LowStockThreshold },
                     { "createdAt", Timestamp.FromDateTime(DateTime.UtcNow) }
                 };
 
@@ -228,6 +230,7 @@ namespace Stockly.Services
                     { "stock", product.Stock },
                     { "status", product.Status },
                     { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
+                    { "lowStockThreshold", product.LowStockThreshold },
                     { "updatedAt", Timestamp.FromDateTime(DateTime.UtcNow) }
                 };
 
@@ -275,6 +278,164 @@ namespace Stockly.Services
                 return false;
             }
         }
+
+        // Activity Management Methods
+        public async Task<bool> CreateActivityAsync(Activity activity)
+        {
+            try
+            {
+                CollectionReference activitiesRef = _db.Collection("activities");
+                var activityData = new Dictionary<string, object>
+                {
+                    { "type", activity.Type },
+                    { "title", activity.Title },
+                    { "description", activity.Description },
+                    { "productName", activity.ProductName },
+                    { "category", activity.Category },
+                    { "timestamp", Timestamp.FromDateTime(activity.Timestamp) },
+                    { "iconColor", activity.IconColor.ToString() },
+                    { "icon", activity.Icon }
+                };
+
+                await activitiesRef.AddAsync(activityData);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating activity: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<List<Activity>> GetRecentActivitiesAsync(int hours = 24)
+        {
+            try
+            {
+                CollectionReference activitiesRef = _db.Collection("activities");
+                var cutoffTime = DateTime.UtcNow.AddHours(-hours);
+                
+                Query query = activitiesRef.WhereGreaterThan("timestamp", Timestamp.FromDateTime(cutoffTime))
+                                        .OrderByDescending("timestamp")
+                                        .Limit(10);
+
+                QuerySnapshot snapshot = await query.GetSnapshotAsync();
+                var activities = new List<Activity>();
+
+                foreach (var doc in snapshot.Documents)
+                {
+                    var data = doc.ToDictionary();
+                    var activity = new Activity
+                    {
+                        Id = doc.Id,
+                        Type = data.ContainsKey("type") ? data["type"].ToString() : "",
+                        Title = data.ContainsKey("title") ? data["title"].ToString() : "",
+                        Description = data.ContainsKey("description") ? data["description"].ToString() : "",
+                        ProductName = data.ContainsKey("productName") ? data["productName"].ToString() : "",
+                        Category = data.ContainsKey("category") ? data["category"].ToString() : "",
+                        Timestamp = data.ContainsKey("timestamp") ? ((Timestamp)data["timestamp"]).ToDateTime() : DateTime.UtcNow,
+                        Icon = data.ContainsKey("icon") ? data["icon"].ToString() : "",
+                        IconColor = data.ContainsKey("iconColor") ? ParseColor(data["iconColor"].ToString()) : Color.Default
+                    };
+                    activities.Add(activity);
+                }
+
+                return activities;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting recent activities: {ex.Message}");
+                return new List<Activity>();
+            }
+        }
+
+        private Color ParseColor(string colorString)
+        {
+            return colorString switch
+            {
+                "Success" => Color.Success,
+                "Warning" => Color.Warning,
+                "Error" => Color.Error,
+                "Info" => Color.Info,
+                "Primary" => Color.Primary,
+                _ => Color.Default
+            };
+        }
+
+        // Enhanced product creation with activity tracking
+        public async Task<bool> CreateProductWithActivityAsync(Product product)
+        {
+            try
+            {
+                // Create the product first
+                var productSuccess = await CreateProductAsync(product);
+                if (!productSuccess) return false;
+
+                // Create activity for new product
+                var activity = new Activity
+                {
+                    Type = "new_item",
+                    Title = "New item added",
+                    Description = $"New item added: {product.Name}",
+                    ProductName = product.Name,
+                    Category = product.Category,
+                    Timestamp = DateTime.UtcNow,
+                    IconColor = Color.Success,
+                    Icon = Icons.Material.Filled.Add
+                };
+
+                await CreateActivityAsync(activity);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating product with activity: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Check for low stock and create activity if needed
+        public async Task CheckLowStockAndCreateActivityAsync(Product product)
+        {
+            try
+            {
+                if (product.Stock <= product.LowStockThreshold && product.Stock > 0)
+                {
+                    var activity = new Activity
+                    {
+                        Type = "low_stock",
+                        Title = "Low stock alert",
+                        Description = $"Low stock alert: {product.Name}",
+                        ProductName = product.Name,
+                        Category = product.Category,
+                        Timestamp = DateTime.UtcNow,
+                        IconColor = Color.Warning,
+                        Icon = Icons.Material.Filled.Warning
+                    };
+
+                    await CreateActivityAsync(activity);
+                }
+                else if (product.Stock == 0)
+                {
+                    var activity = new Activity
+                    {
+                        Type = "out_of_stock",
+                        Title = "Out of stock",
+                        Description = $"Out of stock: {product.Name}",
+                        ProductName = product.Name,
+                        Category = product.Category,
+                        Timestamp = DateTime.UtcNow,
+                        IconColor = Color.Error,
+                        Icon = Icons.Material.Filled.Remove
+                    };
+
+                    await CreateActivityAsync(activity);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking low stock: {ex.Message}");
+            }
+        }
     }
 
     public class User
@@ -295,5 +456,19 @@ namespace Stockly.Services
         public Color StatusColor { get; set; }
         public decimal Price { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int LowStockThreshold { get; set; } = 10; // Default threshold for low stock alerts
+    }
+
+    public class Activity
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Type { get; set; } = ""; // "new_item", "low_stock", "out_of_stock", "inventory_count"
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string ProductName { get; set; } = "";
+        public string Category { get; set; } = "";
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public Color IconColor { get; set; }
+        public string Icon { get; set; } = "";
     }
 } 
