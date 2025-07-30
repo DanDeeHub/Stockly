@@ -26,6 +26,14 @@ namespace Stockly.Services
         public bool IsAuthenticated => _currentUser != null;
         public string Role => _currentUser?.Role ?? string.Empty;
 
+        // Event to notify when reminders are updated
+        public event Action? OnReminderUpdated;
+        
+        public void NotifyReminderUpdated()
+        {
+            OnReminderUpdated?.Invoke();
+        }
+
         public event Action? OnChange;
 
         public void Login(User user)

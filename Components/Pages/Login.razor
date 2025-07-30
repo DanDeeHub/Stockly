@@ -46,7 +46,7 @@
             <MudAlert Severity="Severity.Info" Class="mt-2">
                 <MudText Typo="Typo.body2">
                     <strong>Debug Info:</strong><br/>
-                    User ID: @UserState.CurrentUser?.Id<br/>
+                    User ID: @(UserState.CurrentUser?.Id.ToString("D"))<br/>
                     Username: @UserState.CurrentUser?.Username<br/>
                     Role: @UserState.CurrentUser?.Role
                 </MudText>
@@ -128,12 +128,15 @@
             {
                 UserState.Login(user);
                 
+                // Debug: Log the user information after login
+                Console.WriteLine($"User logged in with ID: {user.Id.ToString("D")}");
+                Console.WriteLine($"User username: {user.Username}");
+                Console.WriteLine($"User role: {user.Role}");
+                Console.WriteLine($"Is Guid: {user.Id != Guid.Empty}");
+                Console.WriteLine($"UserState CurrentUser after login: {UserState.CurrentUser?.Username}");
+                
                 // Save credentials if "Remember Me" is checked
                 await SecureStorage.SaveCredentialsAsync(user.Id, Username, Password, RememberMe);
-                
-                // Debug: Log the user ID to console
-                Console.WriteLine($"User logged in with ID: {user.Id}");
-                Console.WriteLine($"Is Guid: {user.Id != Guid.Empty}");
                 
                 Navigation.NavigateTo("/");
             }

@@ -31,18 +31,41 @@ else
             <!-- Left Column: Reminder and Total Asset Value -->
             <MudItem xs="12" md="6">
                 <MudGrid>
-                    <!-- Reminder Card -->
-                    <MudItem xs="12">
-                        <MudCard Elevation="0" Class="h-100">
-                            <MudCardContent>
-                                <MudText Typo="Typo.h6" Class="mb-3">Reminder</MudText>
-                                <div class="d-flex align-center">
-                                    <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Warning" Class="mr-2" />
-                                    <MudText Typo="Typo.body1">Monthly inventory audit due in 5 days</MudText>
-                                </div>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
+                                         <!-- Reminder Card -->
+                     <MudItem xs="12">
+                         <MudCard Elevation="0" Class="h-100">
+                             <MudCardContent>
+                                                                         <div class="d-flex justify-space-between align-center mb-3">
+            <MudText Typo="Typo.h6">Reminder</MudText>
+        </div>
+                                 @if (_activeReminders.Any())
+                                 {
+                                     var latestReminder = _activeReminders.First();
+                                     var displayTitle = latestReminder.Title.Length > 50 
+                                         ? latestReminder.Title.Substring(0, 50) + "..." 
+                                         : latestReminder.Title;
+                                     
+                                                                           <div class="d-flex align-center justify-space-between">
+                                          <div class="d-flex align-center" style="flex: 1;">
+                                              <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Warning" Class="mr-2" />
+                                              <MudText Typo="Typo.body1">@displayTitle</MudText>
+                                          </div>
+                                          <MudIconButton Icon="@Icons.Material.Filled.ArrowForward" 
+                                                        Size="Size.Small" 
+                                                        Color="Color.Primary" 
+                                                        OnClick="@(() => OpenReminderModal(latestReminder))" />
+                                      </div>
+                                 }
+                                 else
+                                 {
+                                     <div class="d-flex align-center">
+                                         <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Warning" Class="mr-2" />
+                                         <MudText Typo="Typo.body1">No active reminders</MudText>
+                                     </div>
+                                 }
+                             </MudCardContent>
+                         </MudCard>
+                     </MudItem>
                     
                     <!-- Total Asset Value Card -->
                     <MudItem xs="12">
@@ -165,11 +188,11 @@ else
                     </MudCardHeader>
                     <MudCardContent>
                         <div class="d-flex flex-wrap gap-2">
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProductDialog" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Add New Product</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Inventory" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Start Count</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" OnClick="OpenLowStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Low Stock Report</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="OpenOutOfStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Out of Stock</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Download" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Export Data</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProductDialog" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Add New Product</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Inventory" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Start Count</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" OnClick="OpenLowStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Low Stock Report</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="OpenOutOfStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Out of Stock</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Download" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Export Data</MudButton>
                         </div>
                     </MudCardContent>
                 </MudCard>
@@ -361,6 +384,36 @@ else
     }
 }
 
+        @if (_isReminderModalOpen)
+        {
+            <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+                <MudCard Style="width: 95%; max-width: 500px; max-height: 90vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                    <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                        <MudText Typo="Typo.h6" Color="Color.Inherit">@_selectedReminder?.Title</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                      OnClick="CloseReminderModal"
+                                      Size="Size.Small"
+                                      Color="Color.Inherit"
+                                      Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                    </MudCardHeader>
+
+                    <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                        <MudText Typo="Typo.body1" Class="mb-4">@_selectedReminder?.Message</MudText>
+                        <MudDivider Class="my-3" />
+                        <div class="d-flex align-center justify-space-between">
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" Class="mr-2" />
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Created by: @_selectedReminder?.CreatedBy</MudText>
+                            </div>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@_selectedReminder?.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</MudText>
+                        </div>
+                    </MudCardContent>
+                    
+                    
+                </MudCard>
+            </MudOverlay>
+        }
+
 @code {
     private bool _isAddProductDialogOpen = false;
     private bool _isSaving;
@@ -376,6 +429,7 @@ else
     // Caching variables
     private static List<Product> _cachedProducts = [];
     private static List<Activity> _cachedActivities = [];
+    private static List<Reminder> _cachedReminders = [];
     private static DateTime _lastCacheUpdate = DateTime.MinValue;
     private static readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5); // Cache for 5 minutes
 
@@ -387,12 +441,16 @@ else
         }
         else
         {
+            // Subscribe to reminder update notifications
+            UserState.OnReminderUpdated += ClearReminderCache;
+            
             // Use cached data if available and not expired
-            if (_cachedProducts.Any() && _cachedActivities.Any() && 
+            if (_cachedProducts.Any() && _cachedActivities.Any() && _cachedReminders.Any() && 
                 DateTime.Now - _lastCacheUpdate < _cacheExpiration)
             {
                 _products = _cachedProducts;
                 _recentActivities = _cachedActivities;
+                _activeReminders = _cachedReminders;
                 StateHasChanged(); // Show cached data immediately
                 
                 // Load fresh data in background without blocking
@@ -400,6 +458,7 @@ else
                 {
                     await LoadProducts();
                     await LoadRecentActivities();
+                    await LoadReminders();
                 });
             }
             else
@@ -407,10 +466,16 @@ else
                 // No valid cache, load data normally
                 await LoadProducts();
                 await LoadRecentActivities();
+                await LoadReminders();
             }
         }
     }
 
+    public void Dispose()
+    {
+        // Unsubscribe from reminder update notifications
+        UserState.OnReminderUpdated -= ClearReminderCache;
+    }
 
 
     private async Task RefreshDashboardData()
@@ -421,6 +486,7 @@ else
             ClearCache();
             await LoadProducts();
             await LoadRecentActivities();
+            await LoadReminders();
             ShowCenteredNotification("Dashboard data refreshed successfully", Severity.Success);
         }
         catch (Exception ex)
@@ -437,7 +503,21 @@ else
     {
         _cachedProducts.Clear();
         _cachedActivities.Clear();
+        _cachedReminders.Clear();
         _lastCacheUpdate = DateTime.MinValue;
+    }
+
+    // Method to clear reminder cache and reload reminders
+    private void ClearReminderCache()
+    {
+        _cachedReminders.Clear();
+        _lastCacheUpdate = DateTime.MinValue;
+        // Force reload of reminders immediately
+        _ = Task.Run(async () => 
+        {
+            await LoadReminders();
+            await InvokeAsync(StateHasChanged);
+        });
     }
 
     private async Task LoadProducts()
@@ -664,4 +744,37 @@ else
             return "Just now";
         }
     }
+
+    // Reminder functionality
+    private List<Reminder> _activeReminders = new();
+    private bool _isReminderModalOpen = false;
+    private Reminder? _selectedReminder;
+
+    private async Task LoadReminders()
+    {
+        try
+        {
+            _activeReminders = await FirebaseService.GetActiveRemindersAsync();
+            _cachedReminders = _activeReminders; // Cache the loaded reminders
+            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
+            await InvokeAsync(StateHasChanged); // Update UI with fresh data on UI thread
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading reminders: {ex.Message}");
+            await InvokeAsync(() => ShowCenteredNotification($"Error loading reminders: {ex.Message}", Severity.Error));
+        }
+    }
+
+    private void OpenReminderModal(Reminder reminder)
+    {
+        _selectedReminder = reminder;
+        _isReminderModalOpen = true;
+    }
+
+            private void CloseReminderModal()
+        {
+            _isReminderModalOpen = false;
+            _selectedReminder = null;
+        }
 }

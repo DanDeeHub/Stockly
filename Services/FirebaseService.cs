@@ -63,6 +63,10 @@ namespace Stockly.Services
                 var userData = userDoc.ConvertTo<Dictionary<string, object>>();
 
                 Console.WriteLine($"User document ID: {userDoc.Id}");
+                if (Guid.TryParse(userDoc.Id, out Guid debugParsedId))
+                {
+                    Console.WriteLine($"Parsed as Guid: {debugParsedId.ToString("D")}");
+                }
                 Console.WriteLine($"User data keys: {string.Join(", ", userData.Keys)}");
 
                 // Check if password matches (in a real app, you'd hash the password)
@@ -425,6 +429,129 @@ namespace Stockly.Services
             }
         }
 
+        public async Task<bool> CreateReminderAsync(string title, string message, string createdBy)
+        {
+            try
+            {
+                Console.WriteLine($"CreateReminderAsync called with: title='{title}', message='{message}', createdBy='{createdBy}'");
+                
+                // Test Firebase connection first
+                var connectionTest = await TestConnectionAsync();
+                if (!connectionTest)
+                {
+                    Console.WriteLine("Firebase connection test failed");
+                    return false;
+                }
+                
+                // Delete any existing reminders first
+                var existingRemindersRef = _db.Collection("reminders");
+                Console.WriteLine("Getting existing reminders...");
+                var existingSnapshot = await existingRemindersRef.GetSnapshotAsync();
+                Console.WriteLine($"Found {existingSnapshot.Documents.Count} existing reminders");
+                
+                foreach (var doc in existingSnapshot.Documents)
+                {
+                    try
+                    {
+                        Console.WriteLine($"Deleting existing reminder: {doc.Id}");
+                        await doc.Reference.DeleteAsync();
+                    }
+                    catch (Exception deleteEx)
+                    {
+                        Console.WriteLine($"Warning: Failed to delete existing reminder {doc.Id}: {deleteEx.Message}");
+                        // Continue with creation even if deletion fails
+                    }
+                }
+
+                var remindersRef = _db.Collection("reminders");
+                var currentTime = DateTime.UtcNow; // Use UTC time for Firestore
+                var reminderData = new Dictionary<string, object>
+                {
+                    { "title", title },
+                    { "message", message },
+                    { "createdAt", Timestamp.FromDateTime(currentTime) },
+                    { "createdBy", createdBy }
+                };
+
+                Console.WriteLine($"Adding new reminder with timestamp: {currentTime}");
+                Console.WriteLine($"Reminder data: {JsonSerializer.Serialize(reminderData)}");
+                
+                var docRef = await remindersRef.AddAsync(reminderData);
+                Console.WriteLine($"Reminder created successfully with ID: {docRef.Id} and local timestamp: {currentTime}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating reminder: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return false;
+            }
+        }
+
+        public async Task<List<Reminder>> GetActiveRemindersAsync()
+        {
+            try
+            {
+                var remindersRef = _db.Collection("reminders");
+                var snapshot = await remindersRef.GetSnapshotAsync();
+
+                var reminders = new List<Reminder>();
+                var currentDate = DateTime.UtcNow.Date; // Get today's date only (no time) using UTC time
+                
+                foreach (var doc in snapshot.Documents)
+                {
+                    var data = doc.ToDictionary();
+                    var createdAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow;
+                    var reminderCreatedDate = createdAt.Date; // Get the date the reminder was created
+                    
+                    // Check if reminder was created today
+                    if (reminderCreatedDate == currentDate)
+                    {
+                        var reminder = new Reminder
+                        {
+                            Id = doc.Id,
+                            Title = data.ContainsKey("title") ? data["title"].ToString() : "",
+                            Message = data.ContainsKey("message") ? data["message"].ToString() : "",
+                            CreatedAt = createdAt,
+                            CreatedBy = data.ContainsKey("createdBy") ? data["createdBy"].ToString() : ""
+                        };
+                        reminders.Add(reminder);
+                        Console.WriteLine($"Found active reminder: {reminder.Title}, CreatedAt: {reminder.CreatedAt}");
+                    }
+                    else
+                    {
+                        // Delete old reminders (from previous days)
+                        Console.WriteLine($"Deleting old reminder: {(data.ContainsKey("title") ? data["title"].ToString() : "Unknown")}, CreatedAt: {createdAt}");
+                        await doc.Reference.DeleteAsync();
+                    }
+                }
+
+                var result = reminders.OrderByDescending(r => r.CreatedAt).ToList();
+                Console.WriteLine($"Returning {result.Count} active reminders for today, latest: {result.FirstOrDefault()?.CreatedAt}");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting active reminders: {ex.Message}");
+                return new List<Reminder>();
+            }
+        }
+
+        public async Task<bool> DeleteReminderAsync(string reminderId)
+        {
+            try
+            {
+                var reminderRef = _db.Collection("reminders").Document(reminderId);
+                await reminderRef.DeleteAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting reminder: {ex.Message}");
+                return false;
+            }
+        }
+
         private Color ParseColor(string colorString)
         {
             return colorString switch
@@ -547,5 +674,14 @@ namespace Stockly.Services
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         public Color IconColor { get; set; }
         public string Icon { get; set; } = "";
+    }
+
+    public class Reminder
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
     }
 } 

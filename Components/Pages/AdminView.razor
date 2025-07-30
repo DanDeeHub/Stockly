@@ -1,41 +1,378 @@
 ﻿@page "/AdminView"
+@using Stockly.Services
+@inject FirebaseService FirebaseService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject UserStateService UserState
 
 <PageTitle>Admin View</PageTitle>
 
 <AuthorizedPageBase PageName="AdminView">
-    <div class="pa-4">
-        <MudText Typo="Typo.h4" Class="mb-4">Admin Dashboard</MudText>
-        <MudText Typo="Typo.body1">
-            Welcome to the admin dashboard. You have access to all system features.
-        </MudText>
-        
-        <MudGrid Class="mt-4">
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard>
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6">User Management</MudText>
-                        <MudText Typo="Typo.body2">Manage system users and roles</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
+    <div class="pa-2 pa-sm-4">
+        <!-- Header with Buttons -->
+        <div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-3 mb-sm-6">
+            <MudText Typo="Typo.h4" Class="mb-2 mb-sm-0">Admin Dashboard</MudText>
             
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard>
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6">System Settings</MudText>
-                        <MudText Typo="Typo.body2">Configure system parameters</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-            
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard>
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6">Reports</MudText>
-                        <MudText Typo="Typo.body2">View system reports and analytics</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-        </MudGrid>
+                    <div class="d-flex gap-1 gap-sm-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" Elevation="0" Style="height: 40px; width: 180px; white-space: nowrap;" OnClick="OpenCreateUserModal">Create New User</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Notifications" Size="Size.Small" Elevation="0" Style="height: 40px; width: 180px; white-space: nowrap;" OnClick="OpenCreateReminderModal">Create Reminder</MudButton>
+        </div>
+        </div>
     </div>
+
+    <!-- Create Reminder Modal -->
+    @if (_isCreateReminderModalOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+            <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                    <MudText Typo="Typo.h6" Color="Color.Inherit">Create Reminder</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                  OnClick="CloseCreateReminderModal" 
+                                  Size="Size.Small" 
+                                  Color="Color.Inherit"
+                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                </MudCardHeader>
+                
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                    <MudForm @ref="reminderForm" @bind-IsValid="isReminderValid" @bind-Errors="reminderErrors">
+                        <MudGrid>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_newReminder.Title" 
+                                             Label="Reminder Title" 
+                                             Variant="Variant.Outlined" 
+                                             Required="true" 
+                                             RequiredError="Please enter a title"
+                                             Adornment="Adornment.Start" 
+                                             AdornmentIcon="@Icons.Material.Filled.Title" />
+                            </MudItem>
+                            
+                                                         <MudItem xs="12">
+                                 <MudTextField @bind-Value="_newReminder.Message" 
+                                              Label="Message" 
+                                              Variant="Variant.Outlined" 
+                                              Required="true" 
+                                              RequiredError="Please enter a message"
+                                              Lines="8"
+                                              Adornment="Adornment.Start" 
+                                              AdornmentIcon="@Icons.Material.Filled.Message" />
+                             </MudItem>
+                            
+                            @if (!string.IsNullOrEmpty(reminderErrorMessage))
+                            {
+                                <MudItem xs="12">
+                                    <MudAlert Severity="Severity.Error" Class="mt-2">@reminderErrorMessage</MudAlert>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudForm>
+                </MudCardContent>
+                
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
+                    <MudButton OnClick="CloseCreateReminderModal" Variant="Variant.Text" Elevation="0" Class="mr-2" Disabled="@_isSavingReminder">Cancel</MudButton>
+                    <MudButton OnClick="CreateReminder" Variant="Variant.Filled" Color="Color.Warning" Elevation="0" Disabled="@_isSavingReminder">
+                        @if (_isSavingReminder)
+                        {
+                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Create Reminder</span>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudOverlay>
+    }
+
+    <!-- Create User Modal -->
+    @if (_isCreateUserModalOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+            <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                    <MudText Typo="Typo.h6" Color="Color.Inherit">Create New User</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                  OnClick="CloseCreateUserModal" 
+                                  Size="Size.Small" 
+                                  Color="Color.Inherit"
+                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                </MudCardHeader>
+                
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                    <MudForm @ref="form" @bind-IsValid="isValid" @bind-Errors="errors">
+                        <MudGrid>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_newUser.Username" 
+                                             Label="Username" 
+                                             Variant="Variant.Outlined" 
+                                             Required="true" 
+                                             RequiredError="Please enter a username"
+                                             Adornment="Adornment.Start" 
+                                             AdornmentIcon="@Icons.Material.Filled.Person" />
+                            </MudItem>
+                            
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_newUser.Password" 
+                                             Label="Password" 
+                                             Variant="Variant.Outlined" 
+                                             Required="true" 
+                                             RequiredError="Please enter a password"
+                                             InputType="InputType.Password"
+                                             Adornment="Adornment.Start" 
+                                             AdornmentIcon="@Icons.Material.Filled.Lock" />
+                            </MudItem>
+                            
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_newUser.ConfirmPassword" 
+                                             Label="Confirm Password" 
+                                             Variant="Variant.Outlined" 
+                                             Required="true" 
+                                             RequiredError="Please confirm your password"
+                                             InputType="InputType.Password"
+                                             Adornment="Adornment.Start" 
+                                             AdornmentIcon="@Icons.Material.Filled.Lock" />
+                            </MudItem>
+                            
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_newUser.Email" 
+                                             Label="Email (Optional)" 
+                                             Variant="Variant.Outlined"
+                                             Adornment="Adornment.Start" 
+                                             AdornmentIcon="@Icons.Material.Filled.Email" />
+                            </MudItem>
+                            
+                            <MudItem xs="12">
+                                <MudSelect T="string" @bind-Value="_newUser.Role" Label="Role" Variant="Variant.Outlined" Required="true" RequiredError="Please select a role">
+                                    <MudSelectItem Value="@("admin")">Admin</MudSelectItem>
+                                    <MudSelectItem Value="@("opening")">Opening</MudSelectItem>
+                                    <MudSelectItem Value="@("closing")">Closing</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            
+                            @if (!string.IsNullOrEmpty(errorMessage))
+                            {
+                                <MudItem xs="12">
+                                    <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudForm>
+                </MudCardContent>
+                
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
+                    <MudButton OnClick="CloseCreateUserModal" Variant="Variant.Text" Elevation="0" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
+                    <MudButton OnClick="CreateUser" Variant="Variant.Filled" Color="Color.Primary" Elevation="0" Disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Create User</span>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudOverlay>
+    }
 </AuthorizedPageBase>
+
+@code {
+    private bool _isCreateUserModalOpen = false;
+    private bool _isSaving = false;
+    private string errorMessage = string.Empty;
+    private MudForm form = null!;
+    private bool isValid;
+    private string[] errors = Array.Empty<string>();
+
+    private NewUser _newUser = new();
+
+    private void OpenCreateUserModal()
+    {
+        _newUser = new NewUser();
+        errorMessage = string.Empty;
+        _isCreateUserModalOpen = true;
+    }
+
+    private void CloseCreateUserModal()
+    {
+        _isCreateUserModalOpen = false;
+        _newUser = new NewUser();
+        errorMessage = string.Empty;
+    }
+
+    private async Task CreateUser()
+    {
+        await form.Validate();
+        
+        if (!isValid)
+        {
+            errorMessage = "Please fill out all required fields";
+            return;
+        }
+
+        // Validate password confirmation
+        if (_newUser.Password != _newUser.ConfirmPassword)
+        {
+            errorMessage = "Passwords do not match";
+            return;
+        }
+
+        // Validate password strength
+        if (_newUser.Password.Length < 6)
+        {
+            errorMessage = "Password must be at least 6 characters long";
+            return;
+        }
+
+        errorMessage = string.Empty;
+        _isSaving = true;
+
+        try
+        {
+            var success = await FirebaseService.CreateUserAsync(
+                _newUser.Username, 
+                _newUser.Password, 
+                _newUser.Email, 
+                _newUser.Role
+            );
+
+            if (success)
+            {
+                Snackbar.Add($"User '{_newUser.Username}' created successfully!", Severity.Success);
+                CloseCreateUserModal();
+            }
+            else
+            {
+                errorMessage = "Username already exists. Please choose a different username.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred while creating the user. Please try again.";
+            Console.WriteLine($"Registration error: {ex.Message}");
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    public class NewUser
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = "opening";
+    }
+
+    // Reminder functionality
+    private bool _isCreateReminderModalOpen = false;
+    private bool _isSavingReminder = false;
+    private string reminderErrorMessage = string.Empty;
+    private MudForm reminderForm = null!;
+    private bool isReminderValid;
+    private string[] reminderErrors = Array.Empty<string>();
+
+    private NewReminder _newReminder = new();
+
+    private void OpenCreateReminderModal()
+    {
+        _newReminder = new NewReminder();
+        reminderErrorMessage = string.Empty;
+        _isCreateReminderModalOpen = true;
+    }
+
+    private void CloseCreateReminderModal()
+    {
+        _isCreateReminderModalOpen = false;
+        _newReminder = new NewReminder();
+        reminderErrorMessage = string.Empty;
+    }
+
+    private async Task CreateReminder()
+    {
+        await reminderForm.Validate();
+        
+        if (!isReminderValid)
+        {
+            reminderErrorMessage = "Please fill out all required fields";
+            return;
+        }
+
+        // Validate input
+        if (string.IsNullOrWhiteSpace(_newReminder.Title))
+        {
+            reminderErrorMessage = "Title is required";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_newReminder.Message))
+        {
+            reminderErrorMessage = "Message is required";
+            return;
+        }
+
+        reminderErrorMessage = string.Empty;
+        _isSavingReminder = true;
+
+        try
+        {
+            Console.WriteLine($"Attempting to create reminder: Title='{_newReminder.Title}', Message='{_newReminder.Message}'");
+            
+            // Test Firebase connection first
+            var connectionTest = await FirebaseService.TestConnectionAsync();
+            if (!connectionTest)
+            {
+                Console.WriteLine("Firebase connection test failed");
+                reminderErrorMessage = "Failed to connect to database. Please check your connection.";
+                return;
+            }
+            
+            // Debug: Log the current user information
+            Console.WriteLine($"Current user in UserState: {UserState.CurrentUser?.Username ?? "NULL"}");
+            Console.WriteLine($"Is authenticated: {UserState.IsAuthenticated}");
+            Console.WriteLine($"User role: {UserState.Role}");
+            
+            var creatorUsername = UserState.CurrentUser?.Username ?? "Admin";
+            Console.WriteLine($"Creator username for reminder: {creatorUsername}");
+            
+            var success = await FirebaseService.CreateReminderAsync(
+                _newReminder.Title, 
+                _newReminder.Message, 
+                creatorUsername
+            );
+
+            if (success)
+            {
+                Console.WriteLine("Reminder created successfully");
+                Snackbar.Add($"Reminder '{_newReminder.Title}' created successfully!", Severity.Success);
+                CloseCreateReminderModal();
+                UserState.NotifyReminderUpdated(); // Notify UserState that a reminder was updated
+            }
+            else
+            {
+                Console.WriteLine("FirebaseService.CreateReminderAsync returned false");
+                reminderErrorMessage = "Failed to create reminder. Please check the console for more details.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Reminder creation error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            reminderErrorMessage = $"An error occurred while creating the reminder: {ex.Message}";
+        }
+        finally
+        {
+            _isSavingReminder = false;
+        }
+    }
+
+    public class NewReminder
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+    }
+}
