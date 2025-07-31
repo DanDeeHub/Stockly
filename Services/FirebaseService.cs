@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Text.Json;
+using Stockly.Entities;
 
 namespace Stockly.Services
 {
@@ -650,14 +651,7 @@ namespace Stockly.Services
             }
         }
     }
-
-    public class User
-    {
-        public Guid Id { get; set; } = Guid.Empty;
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-    }
+    
 
     public class Product
     {

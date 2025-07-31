@@ -2,8 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using MudBlazor;
 using Stockly.Dtos.Users;
-using Stockly.Interface;
-using Stockly.Services;
+using Stockly.Interfaces;
 
 namespace Stockly.Components.Pages;
 
@@ -12,47 +11,54 @@ public partial class Login : ComponentBase
     [Inject] private IApiService ApiService { get; set; } = null!;
     [Inject] private ProtectedLocalStorage LocalStorage { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
-    [Inject] private UserStateService UserState  { get; set; } = null!;
+    [Inject] private IUserStateService UserState  { get; set; } = null!;
     
     protected UserRequestDto LoginModel { get; set; } = new();
     protected bool IsLoading { get; set; }
-    protected string ErrorMessage { get; set; } = string.Empty;
-    protected MudForm Form;
+    private string ErrorMessage { get; set; } = string.Empty;
+    private MudForm _form = null!;
     protected bool IsValid;
-    protected string[] Errors;
-
-    protected override async Task OnInitializedAsync()
+    protected string[] Errors = [];
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        try
+        if (firstRender && OperatingSystem.IsBrowser())
         {
             var token = await LocalStorage.GetAsync<string>("authToken");
-            if (!string.IsNullOrEmpty(token.Value))
-                Navigation.NavigateTo("/");
+            if (token.Success)
+            {
+                await UserState.LoadUserStateAsync();
+                Navigation.NavigateTo("/", forceLoad: true); 
+            }
+            else
+                Navigation.NavigateTo("/Login");
         }
-        catch { /* Ignore */ }
     }
 
     protected async Task HandleLogin()
     {
+        await _form.Validate();
+        if (!IsValid)
+        {
+            ErrorMessage = "Please fix validation errors";
+            return;
+        }
+
         IsLoading = true;
         ErrorMessage = string.Empty;
+        StateHasChanged();
 
-        try
+        var (success, token) = await ApiService.AuthenticateAsync(LoginModel);
+    
+        if (!success || string.IsNullOrEmpty(token))
+            ErrorMessage = "Invalid username or password";
+        else
         {
-            var success = await ApiService.LoginAsync(LoginModel);
-            if (success)
-                Navigation.NavigateTo("/");
-            else
-                ErrorMessage = "Invalid username or password";
+            await UserState.LoadUserStateAsync();
+            await InvokeAsync(() => Navigation.NavigateTo("/", forceLoad: true));
         }
-        catch (Exception ex)
-        {
-            ErrorMessage = "Login failed. Please try again later.";
-            await Console.Error.WriteLineAsync($"Login error: {ex.Message}");
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+
+        IsLoading = false;
+        StateHasChanged();
     }
 }

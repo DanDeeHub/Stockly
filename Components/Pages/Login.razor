@@ -6,7 +6,7 @@
     <div class="d-flex flex-column gap-3 pa-4" style="width: 300px;">
         <MudText Typo="Typo.h5" Class="text-center pb-4">Sign In</MudText>
         
-        <MudForm @ref="Form" @bind-IsValid="IsValid" @bind-Errors="Errors">
+        <MudForm @ref="_form" @bind-IsValid="IsValid" @bind-Errors="Errors">
             <div class="d-flex align-center">
                 <MudTextField @bind-Value=LoginModel.Username Label="Username" Variant="Variant.Outlined" Required="true" RequiredError="Please enter your username" Class="flex-grow-1" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person" />
             </div>
@@ -22,7 +22,7 @@
                 <MudAlert Severity="Severity.Error" Class="mt-2">@ErrorMessage</MudAlert>
             }
             
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" Size="Size.Medium" OnClick="HandleLogin" Disabled="IsLoading">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" Size="Size.Medium" OnClick=HandleLogin Disabled="IsLoading">
                 @if (IsLoading)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" />

@@ -1,21 +1,19 @@
-@using Stockly.Services
-@inject AuthorizationService Authorization
-@inject NavigationManager Navigation
-
-@if (!Authorization.CanAccessPage(PageName))
+@if (!UserState.IsAuthenticated)
 {
     <div class="d-flex justify-center align-center" style="height: 80vh;">
         <MudCard Class="pa-4">
             <MudCardContent>
                 <MudText Typo="Typo.h5" Class="text-center mb-4">Access Denied</MudText>
                 <MudText Typo="Typo.body1" Class="text-center mb-4">
-                    You don't have permission to access this page.
+                    @(UserState.IsAuthenticated ? 
+                        "You don't have permission to access this page." : 
+                        "Please log in to access this page.")
                 </MudText>
                 <MudButton Variant="Variant.Filled" 
-                          Color="Color.Primary" 
-                          FullWidth="true"
-                          OnClick="GoToHome">
-                    Go to Home
+                           Color="Color.Primary" 
+                           FullWidth="true"
+                           OnClick="GoToHome">
+                    Go to @(UserState.IsAuthenticated ? "Home" : "Login")
                 </MudButton>
             </MudCardContent>
         </MudCard>
@@ -25,16 +23,3 @@ else
 {
     @ChildContent
 }
-
-@code {
-    [Parameter]
-    public string PageName { get; set; } = "";
-
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
-    
-    private void GoToHome()
-    {
-        Navigation.NavigateTo("/");
-    }
-} 

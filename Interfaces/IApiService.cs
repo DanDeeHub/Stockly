@@ -1,10 +1,10 @@
 using Stockly.Dtos.Users;
 
-namespace Stockly.Interface;
+namespace Stockly.Interfaces;
 
 public interface IApiService
 {
-    Task<bool> LoginAsync(UserRequestDto request);
+    Task<(bool Success, string? Token)> AuthenticateAsync(UserRequestDto request);
     Task<string?> GetTokenAsync();
     Task LogoutAsync();
 }

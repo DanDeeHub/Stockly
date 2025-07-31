@@ -1,6 +1,7 @@
 using MudBlazor.Services;
 using Stockly.Components;
-using Stockly.Interface;
+using Stockly.Configuration;
+using Stockly.Interfaces;
 using Stockly.Services;
 
 
@@ -11,11 +12,11 @@ builder.Services.AddMudServices();
 
 // Add custom services
 builder.Services.AddScoped<IApiService, ApiService>();
+builder.Services.AddScoped<IJwtParserService, JwtParserService>();
+builder.Services.AddScoped<IUserStateService, UserStateService>();
 builder.Services.AddScoped<FirebaseService>();
-builder.Services.AddScoped<UserStateService>();
+
 builder.Services.AddScoped<DrawerService>();
-builder.Services.AddScoped<AuthorizationService>();
-builder.Services.AddScoped<SecureStorageService>();
 builder.Services.AddHttpClient("StocklyAPI", client => 
 {
     client.BaseAddress = new Uri("http://192.168.1.144:5103/");
@@ -33,6 +34,8 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+app.UseMiddleware<GlobalExceptionHandler>();
 
 app.UseHttpsRedirection();
 
