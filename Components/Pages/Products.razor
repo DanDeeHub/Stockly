@@ -54,16 +54,37 @@
                                 <MudTh>Stock</MudTh>
                                 <MudTh>Status</MudTh>
                                 <MudTh>Price</MudTh>
-                                <MudTh>Last Updated</MudTh>
+                                <MudTh>Modified</MudTh>
+                                <MudTh>Created</MudTh>
                                 <MudTh>Action</MudTh>
                             </HeaderContent>
                             <RowTemplate>
                                 <MudTd>@context.Name</MudTd>
                                 <MudTd>@context.Category</MudTd>
                                 <MudTd>@context.Stock</MudTd>
-                                <MudTd><MudText Color="@context.StatusColor" Typo="Typo.body2">@context.Status</MudText></MudTd>
+                                <MudTd>
+                                    <MudChip T="string" Color="@context.StatusColor" Size="Size.Small" Variant="Variant.Outlined">
+                                        @context.Status
+                                    </MudChip>
+                                </MudTd>
                                 <MudTd>₱@context.Price.ToString("N0")</MudTd>
-                                <MudTd>@context.CreatedAt.ToString("MM/dd/yy")</MudTd>
+                                <MudTd>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @if (context.LastUpdated.HasValue)
+                                        {
+                                            @GetTimeAgo(context.LastUpdated.Value)
+                                        }
+                                        else
+                                        {
+                                            <MudText Color="Color.Info" Typo="Typo.caption">New</MudText>
+                                        }
+                                    </MudText>
+                                </MudTd>
+                                <MudTd>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @GetTimeAgo(context.CreatedAt)
+                                    </MudText>
+                                </MudTd>
                                 <MudTd>
                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
                                         <MudMenuItem OnClick="@(() => EditProduct(context))">Edit</MudMenuItem>
@@ -223,14 +244,14 @@
                     <MudGrid>
                                                  <MudItem xs="12">
                              <MudText Typo="Typo.subtitle1" Class="mb-2">Sort By</MudText>
-                             <MudSelect ShrinkLabel @bind-Value="_tempSortOrder" Label="Sort Order" Variant="Variant.Outlined" FullWidth="true">
-                                 <MudSelectItem Value="@("name_asc")">Name Ascending</MudSelectItem>
-                                 <MudSelectItem Value="@("name_desc")">Name Descending</MudSelectItem>
-                                 <MudSelectItem Value="@("price_asc")">Price Low to High</MudSelectItem>
-                                 <MudSelectItem Value="@("price_desc")">Price High to Low</MudSelectItem>
-                                 <MudSelectItem Value="@("stock_asc")">Stock Low to High</MudSelectItem>
-                                 <MudSelectItem Value="@("stock_desc")">Stock High to Low</MudSelectItem>
-                             </MudSelect>
+                                                           <MudSelect ShrinkLabel @bind-Value="_tempSortOrder" Label="Sort Order" Variant="Variant.Outlined" FullWidth="true" MaxHeight="200">
+                                  <MudSelectItem Value="@("name_asc")">Name Ascending</MudSelectItem>
+                                  <MudSelectItem Value="@("name_desc")">Name Descending</MudSelectItem>
+                                  <MudSelectItem Value="@("price_asc")">Price Low to High</MudSelectItem>
+                                  <MudSelectItem Value="@("price_desc")">Price High to Low</MudSelectItem>
+                                  <MudSelectItem Value="@("stock_asc")">Stock Low to High</MudSelectItem>
+                                  <MudSelectItem Value="@("stock_desc")">Stock High to Low</MudSelectItem>
+                              </MudSelect>
                          </MudItem>
                          
                                                    <MudItem xs="12">
@@ -238,18 +259,29 @@
                              <MudAutocomplete T="string" @bind-Value="_tempSelectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true"
                                               SearchFunc="SearchFilterCategories" ToStringFunc="@(category => category)" 
                                               AllowCustomValue="true"
-                                              MaxItems="10" />
+                                              MaxItems="10" MaxHeight="200" />
                          </MudItem>
                           
                           <MudItem xs="12">
                               <MudText Typo="Typo.subtitle1" Class="mb-2">Stock Status</MudText>
-                              <MudSelect ShrinkLabel @bind-Value="_tempSelectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true">
+                              <MudSelect ShrinkLabel @bind-Value="_tempSelectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true" MaxHeight="200">
                                   <MudSelectItem Value="@("")">All Status</MudSelectItem>
                                   <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
                                   <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
                                   <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
                               </MudSelect>
                           </MudItem>
+                          
+                          <MudItem xs="12">
+                              <MudText Typo="Typo.subtitle1" Class="mb-2">Modified Date</MudText>
+                              <MudSelect ShrinkLabel @bind-Value="_tempModifiedSort" Label="Sort Modified" Variant="Variant.Outlined" FullWidth="true" MaxHeight="200">
+                                  <MudSelectItem Value="@("")">No Sort</MudSelectItem>
+                                  <MudSelectItem Value="@("modified_oldest")">Oldest - Newest</MudSelectItem>
+                                  <MudSelectItem Value="@("modified_newest")">Newest - Oldest</MudSelectItem>
+                              </MudSelect>
+                          </MudItem>
+                          
+
                      </MudGrid>
                  </MudCardContent>
                  
@@ -325,7 +357,8 @@
     private bool _isFilterModalOpen;
     private string _sortOrder = "name_asc";
     private string _selectedCategory = "";
-    private string _selectedStatus = "";
+            private string _selectedStatus = "";
+        private string _modifiedSort = "";
     private bool _isEditProductDialogOpen;
     private Product _editingProduct;
     
@@ -333,7 +366,8 @@
     private string _tempSearchString = "";
     private string _tempSortOrder = "name_asc";
     private string _tempSelectedCategory = "";
-    private string _tempSelectedStatus = "";
+            private string _tempSelectedStatus = "";
+        private string _tempModifiedSort = "";
 
     private string _deleteConfirmationProductName = "";
     private bool _isDeleteConfirmationOpen = false;
@@ -420,16 +454,35 @@
                 (string.IsNullOrEmpty(_selectedCategory) || product.Category == _selectedCategory) &&
                 (string.IsNullOrEmpty(_selectedStatus) || product.Status == _selectedStatus));
 
-            return _sortOrder switch
+            // Start with the filtered list
+            var sorted = filtered.AsEnumerable();
+
+            // Apply Modified date sorting if selected
+            if (!string.IsNullOrEmpty(_modifiedSort))
             {
-                "name_asc" => filtered.OrderBy(p => p.Name).ToList(),
-                "name_desc" => filtered.OrderByDescending(p => p.Name).ToList(),
-                "price_asc" => filtered.OrderBy(p => p.Price).ToList(),
-                "price_desc" => filtered.OrderByDescending(p => p.Price).ToList(),
-                "stock_asc" => filtered.OrderBy(p => p.Stock).ToList(),
-                "stock_desc" => filtered.OrderByDescending(p => p.Stock).ToList(),
-                _ => filtered.OrderBy(p => p.Name).ToList()
-            };
+                sorted = _modifiedSort switch
+                {
+                    "modified_oldest" => sorted.OrderBy(p => p.LastUpdated ?? DateTime.MinValue),
+                    "modified_newest" => sorted.OrderByDescending(p => p.LastUpdated ?? DateTime.MinValue),
+                    _ => sorted
+                };
+            }
+            // Apply other sorts if no date sorting is selected
+            else
+            {
+                sorted = _sortOrder switch
+                {
+                    "name_asc" => sorted.OrderBy(p => p.Name),
+                    "name_desc" => sorted.OrderByDescending(p => p.Name),
+                    "price_asc" => sorted.OrderBy(p => p.Price),
+                    "price_desc" => sorted.OrderByDescending(p => p.Price),
+                    "stock_asc" => sorted.OrderBy(p => p.Stock),
+                    "stock_desc" => sorted.OrderByDescending(p => p.Stock),
+                    _ => sorted.OrderBy(p => p.Name)
+                };
+            }
+
+            return sorted.ToList();
         }
     }
 
@@ -662,6 +715,7 @@
         _tempSortOrder = _sortOrder;
         _tempSelectedCategory = _selectedCategory;
         _tempSelectedStatus = _selectedStatus;
+        _tempModifiedSort = _modifiedSort;
         _isFilterModalOpen = true;
         StateHasChanged();
     }
@@ -680,6 +734,7 @@
          _searchString = "";
          _selectedCategory = "";
          _selectedStatus = "";
+         _modifiedSort = "";
          _sortOrder = "name_asc";
          
          ShowCenteredNotification("All filters cleared", Severity.Info);
@@ -693,6 +748,7 @@
         _sortOrder = _tempSortOrder;
         _selectedCategory = _tempSelectedCategory;
         _selectedStatus = _tempSelectedStatus;
+        _modifiedSort = _tempModifiedSort;
         CloseFilterModal();
         ShowCenteredNotification("Filters applied successfully", Severity.Success);
     }
@@ -762,6 +818,42 @@
              return Color.Warning;
          else
              return Color.Success;
+     }
+
+     private string GetTimeAgo(DateTime timestamp)
+     {
+         var philippineTime = DateTime.UtcNow.AddHours(8);
+         var timeSpan = philippineTime - timestamp;
+         
+         if (timeSpan.TotalDays >= 365)
+         {
+             var years = (int)(timeSpan.TotalDays / 365);
+             return $"{years} year{(years == 1 ? "" : "s")} ago";
+         }
+         else if (timeSpan.TotalDays >= 30)
+         {
+             var months = (int)(timeSpan.TotalDays / 30);
+             return $"{months} month{(months == 1 ? "" : "s")} ago";
+         }
+         else if (timeSpan.TotalDays >= 1)
+         {
+             var days = (int)timeSpan.TotalDays;
+             return $"{days} day{(days == 1 ? "" : "s")} ago";
+         }
+         else if (timeSpan.TotalHours >= 1)
+         {
+             var hours = (int)timeSpan.TotalHours;
+             return $"{hours} hour{(hours == 1 ? "" : "s")} ago";
+         }
+         else if (timeSpan.TotalMinutes >= 1)
+         {
+             var minutes = (int)timeSpan.TotalMinutes;
+             return $"{minutes} minute{(minutes == 1 ? "" : "s")} ago";
+         }
+         else
+         {
+             return "Just now";
+         }
      }
 
 

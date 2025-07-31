@@ -724,9 +724,20 @@ else
 
     private string GetTimeAgo(DateTime timestamp)
     {
-        var timeSpan = DateTime.UtcNow - timestamp;
+        var philippineTime = DateTime.UtcNow.AddHours(8);
+        var timeSpan = philippineTime - timestamp;
         
-        if (timeSpan.TotalDays >= 1)
+        if (timeSpan.TotalDays >= 365)
+        {
+            var years = (int)(timeSpan.TotalDays / 365);
+            return $"{years} year{(years == 1 ? "" : "s")} ago";
+        }
+        else if (timeSpan.TotalDays >= 30)
+        {
+            var months = (int)(timeSpan.TotalDays / 30);
+            return $"{months} month{(months == 1 ? "" : "s")} ago";
+        }
+        else if (timeSpan.TotalDays >= 1)
         {
             var days = (int)timeSpan.TotalDays;
             return $"{days} day{(days == 1 ? "" : "s")} ago";

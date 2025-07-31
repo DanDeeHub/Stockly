@@ -136,9 +136,11 @@ namespace Stockly.Services
                         Category = data.ContainsKey("category") ? data["category"].ToString() : "",
                         Stock = data.ContainsKey("stock") ? Convert.ToInt32(data["stock"]) : 0,
                         Status = data.ContainsKey("status") ? data["status"].ToString() : "",
+
                         Price = data.ContainsKey("price") ? Convert.ToDecimal(data["price"]) : 0,
                         LowStockThreshold = data.ContainsKey("lowStockThreshold") ? Convert.ToInt32(data["lowStockThreshold"]) : 10,
-                        CreatedAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow
+                        CreatedAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow,
+                        LastUpdated = data.ContainsKey("lastUpdated") ? ((Timestamp)data["lastUpdated"]).ToDateTime() : null
                     };
                     
                     // Set status color based on status
@@ -202,6 +204,12 @@ namespace Stockly.Services
             }
         }
 
+        private DateTime GetPhilippineTime()
+        {
+            // Philippine Standard Time is UTC+8
+            return DateTime.UtcNow.AddHours(8);
+        }
+
         public async Task<bool> CreateProductAsync(Product product)
         {
             try
@@ -215,7 +223,8 @@ namespace Stockly.Services
                     { "status", product.Status },
                     { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
                     { "lowStockThreshold", product.LowStockThreshold },
-                    { "createdAt", Timestamp.FromDateTime(DateTime.UtcNow) }
+                    { "createdAt", Timestamp.FromDateTime(GetPhilippineTime()) },
+                    { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) }
                 };
                 
                 // Add the document to the collection (this will create the collection if it doesn't exist)
@@ -239,9 +248,11 @@ namespace Stockly.Services
                     { "category", product.Category },
                     { "stock", product.Stock },
                     { "status", product.Status },
+
                     { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
                     { "lowStockThreshold", product.LowStockThreshold },
-                    { "updatedAt", Timestamp.FromDateTime(DateTime.UtcNow) }
+                    { "updatedAt", Timestamp.FromDateTime(GetPhilippineTime()) },
+                    { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) }
                 };
 
                 await productRef.UpdateAsync(productData);
@@ -252,6 +263,8 @@ namespace Stockly.Services
                 return false;
             }
         }
+
+
 
         public async Task<bool> DeleteProductAsync(string productId)
         {
@@ -325,7 +338,7 @@ namespace Stockly.Services
                     { "description", activity.Description },
                     { "productName", activity.ProductName },
                     { "category", activity.Category },
-                    { "timestamp", Timestamp.FromDateTime(activity.Timestamp) },
+                    { "timestamp", Timestamp.FromDateTime(GetPhilippineTime()) },
                     { "iconColor", activity.IconColor.ToString() },
                     { "icon", activity.Icon }
                 };
@@ -654,10 +667,10 @@ namespace Stockly.Services
         public int Stock { get; set; }
         public string Status { get; set; } = "";
         public Color StatusColor { get; set; }
-        public string OpeningStatus { get; set; } = ""; // Separate status for opening inventory
-        public Color OpeningStatusColor { get; set; } // Separate color for opening inventory status
+
         public decimal Price { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(8); // Philippine time
+        public DateTime? LastUpdated { get; set; } // Timestamp of last update
         public int LowStockThreshold { get; set; } = 10; // Default threshold for low stock alerts
     }
 
@@ -669,7 +682,7 @@ namespace Stockly.Services
         public string Description { get; set; } = "";
         public string ProductName { get; set; } = "";
         public string Category { get; set; } = "";
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow.AddHours(8); // Philippine time
         public Color IconColor { get; set; }
         public string Icon { get; set; } = "";
     }
