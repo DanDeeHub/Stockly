@@ -188,7 +188,7 @@ else
                     </MudCardHeader>
                     <MudCardContent>
                         <div class="d-flex flex-wrap gap-2">
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProductDialog" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Add New Product</MudButton>
+                                                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="HandleAddProductClick" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Add New Product</MudButton>
                             <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Inventory" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Start Count</MudButton>
                             <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" OnClick="OpenLowStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Low Stock Report</MudButton>
                             <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="OpenOutOfStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Out of Stock</MudButton>
@@ -784,9 +784,23 @@ else
         _isReminderModalOpen = true;
     }
 
-            private void CloseReminderModal()
+                         private void CloseReminderModal()
+         {
+             _isReminderModalOpen = false;
+             _selectedReminder = null;
+         }
+
+    private void HandleAddProductClick()
+    {
+        // Check if user has permission to add products
+        if (UserState.Role == "opening" || UserState.Role == "closing")
         {
-            _isReminderModalOpen = false;
-            _selectedReminder = null;
+            ShowCenteredNotification("You are not permitted to use this action", Severity.Warning);
         }
+        else
+        {
+            // Only admin users can open the add product dialog
+            OpenAddProductDialog();
+        }
+    }
 }
