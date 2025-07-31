@@ -654,6 +654,8 @@ namespace Stockly.Services
         public int Stock { get; set; }
         public string Status { get; set; } = "";
         public Color StatusColor { get; set; }
+        public string OpeningStatus { get; set; } = ""; // Separate status for opening inventory
+        public Color OpeningStatusColor { get; set; } // Separate color for opening inventory status
         public decimal Price { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int LowStockThreshold { get; set; } = 10; // Default threshold for low stock alerts

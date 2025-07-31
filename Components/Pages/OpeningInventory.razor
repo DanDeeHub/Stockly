@@ -3,6 +3,7 @@
 @inject FirebaseService FirebaseService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject UserStateService UserState
 
 <PageTitle>Opening Inventory</PageTitle>
 
@@ -12,9 +13,10 @@
         <div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-3 mb-sm-6">
             <MudText Typo="Typo.h4" Class="mb-2 mb-sm-0">Opening Inventory</MudText>
             
-            <div class="d-flex gap-1 gap-sm-2 flex-wrap">
-                                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="height: 40px; min-width: 100px; max-width: 140px;">Bulk Edit</MudButton>
-            </div>
+                         <div class="d-flex gap-1 gap-sm-2 flex-wrap">
+                                  <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="height: 40px; min-width: 100px; max-width: 140px;">Bulk Edit</MudButton>
+                                  <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Stop" Size="Size.Small" Style="height: 40px; min-width: 100px; max-width: 140px;" OnClick="EndInventory">End Inventory</MudButton>
+             </div>
         </div>
         
         <!-- Search and Filter Section -->
@@ -50,18 +52,26 @@
                                  <MudTh>Product Name</MudTh>
                                  <MudTh>Category</MudTh>
                                  <MudTh>Status</MudTh>
+                                                                   @if (UserState.Role != "opening" && UserState.Role != "admin")
+                                  {
+                                      <MudTh>Stock</MudTh>
+                                  }
                                  <MudTh>Action</MudTh>
                              </HeaderContent>
-                             <RowTemplate>
-                                 <MudTd>@context.Name</MudTd>
-                                 <MudTd>@context.Category</MudTd>
-                                 <MudTd><MudText Color="@context.StatusColor" Typo="Typo.body2">@context.Status</MudText></MudTd>
-                                                                   <MudTd>
+                                                           <RowTemplate>
+                                  <MudTd>@context.Name</MudTd>
+                                  <MudTd>@context.Category</MudTd>
+                                  <MudTd><MudText Color="@context.OpeningStatusColor" Typo="Typo.body2">@context.OpeningStatus</MudText></MudTd>
+                                                                    @if (UserState.Role != "opening" && UserState.Role != "admin")
+                                   {
+                                       <MudTd>@context.Stock</MudTd>
+                                   }
+                                  <MudTd>
                                       <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
                                           <MudMenuItem OnClick="@(() => EditProduct(context))">Update</MudMenuItem>
                                       </MudMenu>
                                   </MudTd>
-                             </RowTemplate>
+                              </RowTemplate>
                              <PagerContent><MudTablePager /></PagerContent>
                          </MudTable>
                     }
@@ -143,7 +153,7 @@
         <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
             <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
                                  <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
-                     <MudText Typo="Typo.h6">Update Product</MudText>
+                     <MudText Typo="Typo.h6">@((UserState.Role == "opening" || UserState.Role == "admin") ? "Set Opening Inventory" : "Update Product")</MudText>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" 
                                   OnClick="CloseEditModal" 
                                   Size="Size.Small" 
@@ -160,8 +170,18 @@
                              <MudTextField @bind-Value="_editingProduct.Category" Label="Category" Variant="Variant.Outlined" ReadOnly="true" />
                          </MudItem>
                          <MudItem xs="12">
-                             <MudNumericField @bind-Value="_editingProduct.Stock" Label="Update Quantity" Variant="Variant.Outlined" Required="true" />
+                             <MudNumericField @bind-Value="_editingProduct.Stock" Label="@((UserState.Role == "opening" || UserState.Role == "admin") ? "Opening Inventory Quantity" : "Update Quantity")" Variant="Variant.Outlined" Required="true" />
                          </MudItem>
+                                                   @if (UserState.Role == "opening" || UserState.Role == "admin")
+                          {
+                              <MudItem xs="12">
+                                                                     <MudAlert Severity="Severity.Info" Class="mt-2">
+                                       <MudText Typo="Typo.body2">
+                                           Note: Opening users cannot view total stock quantities. The quantity shown is for update purposes only.
+                                       </MudText>
+                                   </MudAlert>
+                              </MudItem>
+                          }
                      </MudGrid>
                  </MudCardContent>
                 
@@ -174,7 +194,7 @@
                         }
                         else
                         {
-                            <span>Update Product</span>
+                                                         <span>@((UserState.Role == "opening" || UserState.Role == "admin") ? "Set Opening Inventory" : "Update Product")</span>
                         }
                     </MudButton>
                 </MudCardActions>
@@ -218,9 +238,8 @@
                             <MudText Typo="Typo.subtitle1" Class="mb-2">Stock Status</MudText>
                             <MudSelect ShrinkLabel @bind-Value="_tempSelectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true">
                                 <MudSelectItem Value="@("")">All Status</MudSelectItem>
-                                <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
-                                <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
+                                <MudSelectItem Value="@("Updated")">Updated</MudSelectItem>
+                                <MudSelectItem Value="@("Not Updated")">Not Updated</MudSelectItem>
                             </MudSelect>
                         </MudItem>
                     </MudGrid>
@@ -324,11 +343,32 @@
     override protected async Task OnInitializedAsync()
     {
         // Use cached data if available and not expired
-        if (_cachedProducts.Any() && DateTime.Now - _lastCacheUpdate < _cacheExpiration)
-        {
-            _products = _cachedProducts;
-            _isLoading = false;
-            StateHasChanged(); // Show cached data immediately
+                 if (_cachedProducts.Any() && DateTime.Now - _lastCacheUpdate < _cacheExpiration)
+         {
+             _products = _cachedProducts;
+             
+             // For opening inventory, preserve existing OpeningStatus values from cache
+             // Only set to "Not Updated" if OpeningStatus is empty or null
+             foreach (var product in _products)
+             {
+                 // Only set to "Not Updated" if OpeningStatus is not already set
+                 if (string.IsNullOrEmpty(product.OpeningStatus))
+                 {
+                     product.OpeningStatus = "Not Updated";
+                     product.OpeningStatusColor = Color.Default;
+                 }
+                 else if (product.OpeningStatus == "Updated")
+                 {
+                     product.OpeningStatusColor = Color.Success;
+                 }
+                 else
+                 {
+                     product.OpeningStatusColor = Color.Default;
+                 }
+             }
+             
+             _isLoading = false;
+             StateHasChanged(); // Show cached data immediately
             
             // Load fresh data in background without showing loading state
             _ = Task.Run(async () => await LoadProducts());
@@ -358,9 +398,30 @@
                 return;
             }
             
-            _products = await FirebaseService.GetProductsAsync();
-            _cachedProducts = _products; // Cache the loaded products
-            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
+                         _products = await FirebaseService.GetProductsAsync();
+             
+             // For opening inventory, preserve existing OpeningStatus values from database
+             // Only set to "Not Updated" if OpeningStatus is empty or null
+             foreach (var product in _products)
+             {
+                 // Only set to "Not Updated" if OpeningStatus is not already set
+                 if (string.IsNullOrEmpty(product.OpeningStatus))
+                 {
+                     product.OpeningStatus = "Not Updated";
+                     product.OpeningStatusColor = Color.Default;
+                 }
+                 else if (product.OpeningStatus == "Updated")
+                 {
+                     product.OpeningStatusColor = Color.Success;
+                 }
+                 else
+                 {
+                     product.OpeningStatusColor = Color.Default;
+                 }
+             }
+             
+             _cachedProducts = _products; // Cache the loaded products
+             _lastCacheUpdate = DateTime.Now; // Update cache timestamp
         }
         catch (Exception ex)
         {
@@ -386,12 +447,12 @@
     {
         get
         {
-            var filtered = _products.Where(product => 
-                (string.IsNullOrEmpty(_searchString) || 
-                 product.Name.ToLower().Contains(_searchString.ToLower()) ||
-                 product.Category.ToLower().Contains(_searchString.ToLower())) &&
-                (string.IsNullOrEmpty(_selectedCategory) || product.Category == _selectedCategory) &&
-                (string.IsNullOrEmpty(_selectedStatus) || product.Status == _selectedStatus));
+                         var filtered = _products.Where(product => 
+                 (string.IsNullOrEmpty(_searchString) || 
+                  product.Name.ToLower().Contains(_searchString.ToLower()) ||
+                  product.Category.ToLower().Contains(_searchString.ToLower())) &&
+                 (string.IsNullOrEmpty(_selectedCategory) || product.Category == _selectedCategory) &&
+                 (string.IsNullOrEmpty(_selectedStatus) || product.OpeningStatus == _selectedStatus));
 
             return _sortOrder switch
             {
@@ -411,18 +472,20 @@
     private void EditProduct(Product product)
     {
         // Create a copy of the product to avoid modifying the original until saved
-        _editingProduct = new Product
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Category = product.Category,
-            Stock = product.Stock,
-            LowStockThreshold = product.LowStockThreshold,
-            Price = product.Price,
-            Status = product.Status,
-            StatusColor = product.StatusColor,
-            CreatedAt = product.CreatedAt
-        };
+                 _editingProduct = new Product
+         {
+             Id = product.Id,
+             Name = product.Name,
+             Category = product.Category,
+                          Stock = (UserState.Role == "opening" || UserState.Role == "admin") ? 0 : product.Stock, // Show 0 for opening users and admins
+             LowStockThreshold = product.LowStockThreshold,
+             Price = product.Price,
+             Status = product.Status,
+             StatusColor = product.StatusColor,
+             OpeningStatus = product.OpeningStatus,
+             OpeningStatusColor = product.OpeningStatusColor,
+             CreatedAt = product.CreatedAt
+         };
         _isEditProductDialogOpen = true;
     }
 
@@ -514,9 +577,9 @@
                 return;
             }
 
-            // Automatically set status based on stock and threshold
-            _newProduct.Status = GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold);
-            _newProduct.StatusColor = GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold);
+                         // Set status to "Updated" for new products
+             _newProduct.OpeningStatus = "Updated";
+             _newProduct.OpeningStatusColor = Color.Success;
 
             var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct);
             if (success)
@@ -570,9 +633,26 @@
                 return;
             }
 
-            // Automatically set status based on stock and threshold
-            _editingProduct.Status = GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold);
-            _editingProduct.StatusColor = GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+                                      // For opening users and admins, the stock field represents the ADDITIONAL opening inventory amount
+             // We need to add this to the existing stock
+             if (UserState.Role == "opening" || UserState.Role == "admin")
+             {
+                 // Get the original product to find the current stock
+                 var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
+                 if (originalProduct != null)
+                 {
+                     // Add the opening inventory amount to the existing stock
+                     _editingProduct.Stock = originalProduct.Stock + _editingProduct.Stock;
+                 }
+             }
+
+                         // Set status to "Updated" when opening inventory is added
+             _editingProduct.OpeningStatus = "Updated";
+             _editingProduct.OpeningStatusColor = Color.Success;
+             
+             // Also update the regular status for the Products page
+             _editingProduct.Status = GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+             _editingProduct.StatusColor = GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold);
 
             var success = await FirebaseService.UpdateProductAsync(_editingProduct);
             if (success)
@@ -580,21 +660,23 @@
                 // Check for low stock conditions and create activities
                 await FirebaseService.CheckLowStockAndCreateActivityAsync(_editingProduct);
                 
-                // Find and update the original product in the list
-                var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
-                if (originalProduct != null)
-                {
-                    originalProduct.Name = _editingProduct.Name;
-                    originalProduct.Category = _editingProduct.Category;
-                    originalProduct.Stock = _editingProduct.Stock;
-                    originalProduct.LowStockThreshold = _editingProduct.LowStockThreshold;
-                    originalProduct.Price = _editingProduct.Price;
-                    originalProduct.Status = _editingProduct.Status;
-                    originalProduct.StatusColor = _editingProduct.StatusColor;
-                }
+                                                  // Find and update the original product in the list
+                  var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
+                  if (originalProduct != null)
+                  {
+                      originalProduct.Name = _editingProduct.Name;
+                      originalProduct.Category = _editingProduct.Category;
+                      originalProduct.Stock = _editingProduct.Stock;
+                      originalProduct.LowStockThreshold = _editingProduct.LowStockThreshold;
+                      originalProduct.Price = _editingProduct.Price;
+                      originalProduct.OpeningStatus = _editingProduct.OpeningStatus;
+                      originalProduct.OpeningStatusColor = _editingProduct.OpeningStatusColor;
+                      originalProduct.Status = _editingProduct.Status;
+                      originalProduct.StatusColor = _editingProduct.StatusColor;
+                  }
                 
                 _isEditProductDialogOpen = false;
-                ShowCenteredNotification($"Product '{_editingProduct.Name}' updated successfully", Severity.Success);
+                                 ShowCenteredNotification($"Product '{_editingProduct.Name}' {((UserState.Role == "opening" || UserState.Role == "admin") ? "opening inventory set" : "updated")} successfully", Severity.Success);
                 
                 // Clear cache to force fresh data load
                 ClearCache();
@@ -602,12 +684,12 @@
             }
             else
             {
-                ShowCenteredNotification($"Failed to update product '{_editingProduct.Name}'", Severity.Error);
+                                 ShowCenteredNotification($"Failed to {((UserState.Role == "opening" || UserState.Role == "admin") ? "set opening inventory for" : "update")} product '{_editingProduct.Name}'", Severity.Error);
             }
         }
         catch (Exception ex)
         {
-            ShowCenteredNotification($"Error updating product: {ex.Message}", Severity.Error);
+                         ShowCenteredNotification($"Error {((UserState.Role == "opening" || UserState.Role == "admin") ? "setting opening inventory" : "updating product")}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -661,7 +743,7 @@
         _searchString = _tempSearchString;
         _sortOrder = _tempSortOrder;
         _selectedCategory = _tempSelectedCategory;
-        _tempSelectedStatus = _selectedStatus;
+        _selectedStatus = _tempSelectedStatus;
         CloseFilterModal();
         ShowCenteredNotification("Filters applied successfully", Severity.Success);
     }
@@ -712,24 +794,74 @@
         return matchingCategories;
     }
 
-    // Helper methods for automatic status calculation
-    private string GetStatusText(int stock, int threshold)
-    {
-        if (stock == 0)
-            return "Out of stock";
-        else if (stock <= threshold)
-            return "Low stock";
-        else
-            return "In stock";
-    }
 
-    private Color GetStatusColor(int stock, int threshold)
-    {
-        if (stock == 0)
-            return Color.Error;
-        else if (stock <= threshold)
-            return Color.Warning;
-        else
-            return Color.Success;
-    }
+
+     // Helper methods for regular stock status calculation (for other pages)
+     private string GetStatusText(int stock, int threshold)
+     {
+         if (stock == 0)
+             return "Out of stock";
+         else if (stock <= threshold)
+             return "Low stock";
+         else
+             return "In stock";
+     }
+
+     private Color GetStatusColor(int stock, int threshold)
+     {
+         if (stock == 0)
+             return Color.Error;
+         else if (stock <= threshold)
+             return Color.Warning;
+         else
+             return Color.Success;
+     }
+
+     private async Task EndInventory()
+     {
+         try
+         {
+             // Show confirmation dialog
+             var parameters = new DialogParameters
+             {
+                 ["Title"] = "End Inventory",
+                 ["Content"] = "Are you sure you want to end the current inventory session? This will reset all product statuses to 'Not Updated'.",
+                 ["YesText"] = "End Inventory",
+                 ["NoText"] = "Cancel"
+             };
+
+             var dialog = await DialogService.ShowMessageBox(
+                 "End Inventory",
+                 "Are you sure you want to end the current inventory session? This will reset all product statuses to 'Not Updated'.",
+                 yesText: "End Inventory",
+                 noText: "Cancel"
+             );
+
+             if (dialog == true)
+             {
+                 // Reset all product opening inventory to 0 and update status
+                 // Note: This is a simplified approach. In a real system, we'd track opening inventory separately
+                                   foreach (var product in _products)
+                  {
+                      // Reset opening inventory status to "Not Updated"
+                      product.OpeningStatus = "Not Updated";
+                      product.OpeningStatusColor = Color.Default;
+                  }
+
+                 // Update all products in Firebase
+                 var updateTasks = _products.Select(product => FirebaseService.UpdateProductAsync(product));
+                 await Task.WhenAll(updateTasks);
+
+                 // Clear cache to force fresh data load
+                 ClearCache();
+                 await LoadProducts();
+
+                 ShowCenteredNotification("Inventory session ended successfully. All products reset to 'Not Updated'.", Severity.Success);
+             }
+         }
+         catch (Exception ex)
+         {
+             ShowCenteredNotification($"Error ending inventory: {ex.Message}", Severity.Error);
+         }
+     }
 }
