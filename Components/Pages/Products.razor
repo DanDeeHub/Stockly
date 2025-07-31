@@ -538,9 +538,17 @@
             _isSaving = true;
             StateHasChanged();
 
-                         // Automatically set status based on stock and threshold
-             _newProduct.Status = GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold);
-             _newProduct.StatusColor = GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold);
+            // Check if product name already exists
+            var productExists = await FirebaseService.CheckProductNameExistsAsync(_newProduct.Name);
+            if (productExists)
+            {
+                ShowCenteredNotification($"A product with the name '{_newProduct.Name}' already exists. Please choose a different name.", Severity.Warning);
+                return;
+            }
+
+            // Automatically set status based on stock and threshold
+            _newProduct.Status = GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold);
+            _newProduct.StatusColor = GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold);
 
             var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct);
             if (success)
@@ -586,9 +594,17 @@
             _isSaving = true;
             StateHasChanged();
 
-                         // Automatically set status based on stock and threshold
-             _editingProduct.Status = GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold);
-             _editingProduct.StatusColor = GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+            // Check if product name already exists (excluding the current product being edited)
+            var productExists = await FirebaseService.CheckProductNameExistsAsync(_editingProduct.Name, _editingProduct.Id);
+            if (productExists)
+            {
+                ShowCenteredNotification($"A product with the name '{_editingProduct.Name}' already exists. Please choose a different name.", Severity.Warning);
+                return;
+            }
+
+            // Automatically set status based on stock and threshold
+            _editingProduct.Status = GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+            _editingProduct.StatusColor = GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold);
 
             var success = await FirebaseService.UpdateProductAsync(_editingProduct);
             if (success)

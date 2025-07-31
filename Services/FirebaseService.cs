@@ -161,6 +161,47 @@ namespace Stockly.Services
             }
         }
 
+        public async Task<bool> CheckProductNameExistsAsync(string productName)
+        {
+            try
+            {
+                CollectionReference productsRef = _db.Collection("products");
+                Query query = productsRef.WhereEqualTo("name", productName);
+                QuerySnapshot snapshot = await query.GetSnapshotAsync();
+                
+                return snapshot.Count > 0;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> CheckProductNameExistsAsync(string productName, string excludeProductId)
+        {
+            try
+            {
+                CollectionReference productsRef = _db.Collection("products");
+                Query query = productsRef.WhereEqualTo("name", productName);
+                QuerySnapshot snapshot = await query.GetSnapshotAsync();
+                
+                // Check if any product with this name exists, excluding the specified product ID
+                foreach (var doc in snapshot.Documents)
+                {
+                    if (doc.Id != excludeProductId)
+                    {
+                        return true; // Found another product with the same name
+                    }
+                }
+                
+                return false; // No other product with this name found
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         public async Task<bool> CreateProductAsync(Product product)
         {
             try
@@ -289,7 +330,12 @@ namespace Stockly.Services
                     { "icon", activity.Icon }
                 };
 
+                // Add the new activity
                 await activitiesRef.AddAsync(activityData);
+
+                // Maintain only the 14 most recent activities (sliding window)
+                await MaintainActivityLimitAsync(14);
+
                 return true;
             }
             catch (Exception)
@@ -298,16 +344,45 @@ namespace Stockly.Services
             }
         }
 
+        private async Task MaintainActivityLimitAsync(int maxActivities)
+        {
+            try
+            {
+                CollectionReference activitiesRef = _db.Collection("activities");
+                
+                // Get all activities ordered by timestamp (oldest first)
+                Query query = activitiesRef.OrderBy("timestamp");
+                QuerySnapshot snapshot = await query.GetSnapshotAsync();
+
+                // If we have more than the limit, delete the oldest ones
+                if (snapshot.Count > maxActivities)
+                {
+                    int activitiesToDelete = snapshot.Count - maxActivities;
+                    
+                    // Delete the oldest activities
+                    for (int i = 0; i < activitiesToDelete; i++)
+                    {
+                        var doc = snapshot.Documents[i];
+                        await doc.Reference.DeleteAsync();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Log error if needed, but don't fail the main operation
+            }
+        }
+
         public async Task<List<Activity>> GetRecentActivitiesAsync(int hours = 24)
         {
             try
             {
                 CollectionReference activitiesRef = _db.Collection("activities");
-                var cutoffTime = DateTime.UtcNow.AddHours(-hours);
                 
-                Query query = activitiesRef.WhereGreaterThan("timestamp", Timestamp.FromDateTime(cutoffTime))
-                                        .OrderByDescending("timestamp")
-                                        .Limit(10);
+                // Since we now maintain only 14 activities, we can get all of them
+                // and filter by time if needed, or just return the most recent ones
+                Query query = activitiesRef.OrderByDescending("timestamp")
+                                        .Limit(14); // Get the 14 most recent activities
 
                 QuerySnapshot snapshot = await query.GetSnapshotAsync();
                 var activities = new List<Activity>();

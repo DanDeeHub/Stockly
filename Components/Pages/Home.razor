@@ -610,6 +610,14 @@ else
             _isSaving = true;
             StateHasChanged();
 
+            // Check if product name already exists
+            var productExists = await FirebaseService.CheckProductNameExistsAsync(_newProduct.Name);
+            if (productExists)
+            {
+                ShowCenteredNotification($"A product with the name '{_newProduct.Name}' already exists. Please choose a different name.", Severity.Warning);
+                return;
+            }
+
             // Automatically set status based on stock and threshold
             _newProduct.Status = GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold);
             _newProduct.StatusColor = GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold);
