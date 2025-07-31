@@ -1,9 +1,4 @@
 ﻿@page "/Login"
-@using Stockly.Services
-@inject FirebaseService FirebaseService
-@inject UserStateService UserState
-@inject NavigationManager Navigation
-@inject SecureStorageService SecureStorage
 
 <PageTitle>Login</PageTitle>
 
@@ -11,24 +6,24 @@
     <div class="d-flex flex-column gap-3 pa-4" style="width: 300px;">
         <MudText Typo="Typo.h5" Class="text-center pb-4">Sign In</MudText>
         
-        <MudForm @ref="form" @bind-IsValid="isValid" @bind-Errors="errors">
+        <MudForm @ref="Form" @bind-IsValid="IsValid" @bind-Errors="Errors">
             <div class="d-flex align-center">
-                <MudTextField @bind-Value="Username" Label="Username" Variant="Variant.Outlined" Required="true" RequiredError="Please enter your username" Class="flex-grow-1" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person" />
+                <MudTextField @bind-Value=LoginModel.Username Label="Username" Variant="Variant.Outlined" Required="true" RequiredError="Please enter your username" Class="flex-grow-1" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person" />
             </div>
             
             <div class="d-flex align-center">
-                <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" Required="true" RequiredError="Please enter your password" InputType="InputType.Password" Class="flex-grow-1" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
+                <MudTextField @bind-Value="LoginModel.Password" Label="Password" Variant="Variant.Outlined" Required="true" RequiredError="Please enter your password" InputType="InputType.Password" Class="flex-grow-1" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
             </div>
             
-            <MudCheckBox T="bool" @bind-Checked="RememberMe" Label="Remember Me" Color="Color.Primary" />
+            <MudCheckBox T="bool" @bind-Checked="LoginModel.RememberMe" Label="Remember Me" Color="Color.Primary" />
             
-            @if (!string.IsNullOrEmpty(errorMessage))
+            @if (!string.IsNullOrEmpty(ErrorMessage))
             {
-                <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
+                <MudAlert Severity="Severity.Error" Class="mt-2">@ErrorMessage</MudAlert>
             }
             
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" Size="Size.Medium" OnClick="HandleSignIn" Disabled="@isLoading">
-                @if (isLoading)
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" Size="Size.Medium" OnClick="HandleLogin" Disabled="IsLoading">
+                @if (IsLoading)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" />
                     <span class="ml-2">Signing In...</span>
@@ -54,98 +49,3 @@
         }
     </div>
 </div>
-
-@code {
-    private string Username { get; set; } = string.Empty;
-    private string Password { get; set; } = string.Empty;
-    private string errorMessage = string.Empty;
-    private MudForm form = null!;
-    private bool isValid;
-    private string[] errors = Array.Empty<string>();
-    private bool isLoading = false;
-    private bool RememberMe { get; set; } = false;
-    
-    protected override async Task OnInitializedAsync()
-    {
-        if (UserState.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/");
-            return;
-        }
-    }
-    
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && !UserState.IsAuthenticated)
-        {
-            // Try to load saved credentials after the component has rendered
-            try
-            {
-                var savedCredentials = await SecureStorage.LoadCredentialsAsync();
-                if (savedCredentials != null)
-                {
-                    Username = savedCredentials.Username;
-                    Password = savedCredentials.Password;
-                    RememberMe = true;
-                    StateHasChanged();
-                }
-                else
-                {
-                    // Try to load session data
-                    var sessionData = await SecureStorage.LoadSessionDataAsync();
-                    if (sessionData != null)
-                    {
-                        Username = sessionData.Username;
-                        StateHasChanged();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading saved credentials: {ex.Message}");
-            }
-        }
-    }
-    
-    private async Task HandleSignIn()
-    {
-        await form.Validate();
-        
-        if (!isValid)
-        {
-            errorMessage = "Please fill out all required fields";
-            return;
-        }
-        
-        errorMessage = string.Empty;
-        isLoading = true;
-        
-        try
-        {
-            var user = await FirebaseService.AuthenticateUserAsync(Username, Password);
-            
-            if (user != null)
-            {
-                UserState.Login(user);
-                
-                // Save credentials if "Remember Me" is checked
-                await SecureStorage.SaveCredentialsAsync(user.Id, Username, Password, RememberMe);
-                
-                Navigation.NavigateTo("/");
-            }
-            else
-            {
-                errorMessage = "Invalid username or password";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "An error occurred during sign in. Please try again.";
-            Console.WriteLine($"Login error: {ex.Message}");
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-}
