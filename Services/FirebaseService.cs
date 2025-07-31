@@ -140,7 +140,8 @@ namespace Stockly.Services
                         Price = data.ContainsKey("price") ? Convert.ToDecimal(data["price"]) : 0,
                         LowStockThreshold = data.ContainsKey("lowStockThreshold") ? Convert.ToInt32(data["lowStockThreshold"]) : 10,
                         CreatedAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow,
-                        LastUpdated = data.ContainsKey("lastUpdated") ? ((Timestamp)data["lastUpdated"]).ToDateTime() : null
+                        LastUpdated = data.ContainsKey("lastUpdated") ? ((Timestamp)data["lastUpdated"]).ToDateTime() : null,
+                        LastModifiedBy = data.ContainsKey("lastModifiedBy") ? data["lastModifiedBy"].ToString() : null
                     };
                     
                     // Set status color based on status
@@ -210,7 +211,7 @@ namespace Stockly.Services
             return DateTime.UtcNow.AddHours(8);
         }
 
-        public async Task<bool> CreateProductAsync(Product product)
+        public async Task<bool> CreateProductAsync(Product product, string createdBy = "")
         {
             try
             {
@@ -224,7 +225,8 @@ namespace Stockly.Services
                     { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
                     { "lowStockThreshold", product.LowStockThreshold },
                     { "createdAt", Timestamp.FromDateTime(GetPhilippineTime()) },
-                    { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) }
+                    { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) },
+                    { "lastModifiedBy", createdBy }
                 };
                 
                 // Add the document to the collection (this will create the collection if it doesn't exist)
@@ -237,7 +239,7 @@ namespace Stockly.Services
             }
         }
 
-        public async Task<bool> UpdateProductAsync(Product product)
+        public async Task<bool> UpdateProductAsync(Product product, string modifiedBy = "")
         {
             try
             {
@@ -248,11 +250,11 @@ namespace Stockly.Services
                     { "category", product.Category },
                     { "stock", product.Stock },
                     { "status", product.Status },
-
                     { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
                     { "lowStockThreshold", product.LowStockThreshold },
                     { "updatedAt", Timestamp.FromDateTime(GetPhilippineTime()) },
-                    { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) }
+                    { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) },
+                    { "lastModifiedBy", modifiedBy }
                 };
 
                 await productRef.UpdateAsync(productData);
@@ -576,12 +578,12 @@ namespace Stockly.Services
         }
 
         // Enhanced product creation with activity tracking
-        public async Task<bool> CreateProductWithActivityAsync(Product product)
+        public async Task<bool> CreateProductWithActivityAsync(Product product, string createdBy = "")
         {
             try
             {
                 // Create the product first
-                var productSuccess = await CreateProductAsync(product);
+                var productSuccess = await CreateProductAsync(product, createdBy);
                 if (!productSuccess) return false;
 
                 // Create activity for new product
@@ -671,6 +673,7 @@ namespace Stockly.Services
         public decimal Price { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(8); // Philippine time
         public DateTime? LastUpdated { get; set; } // Timestamp of last update
+        public string? LastModifiedBy { get; set; } // Username who last modified the product
         public int LowStockThreshold { get; set; } = 10; // Default threshold for low stock alerts
     }
 

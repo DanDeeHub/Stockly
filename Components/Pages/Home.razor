@@ -619,7 +619,7 @@ else
             _newProduct.Status = GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold);
             _newProduct.StatusColor = GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold);
 
-            var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct);
+            var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct, UserState.CurrentUser?.Username ?? "");
             if (success)
             {
                 // Reload products and activities

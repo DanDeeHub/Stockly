@@ -56,18 +56,18 @@
                                                                                       <RowTemplate>
                                    <MudTd>@context.Name</MudTd>
                                    <MudTd>@context.Category</MudTd>
-                                   <MudTd>
-                                       <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                           @if (context.LastUpdated.HasValue)
-                                           {
-                                               @GetTimeAgo(context.LastUpdated.Value)
-                                           }
-                                           else
-                                           {
-                                               <MudText Color="Color.Info" Typo="Typo.caption">New</MudText>
-                                           }
-                                       </MudText>
-                                   </MudTd>
+                                                                       <MudTd>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            @if (context.LastUpdated.HasValue)
+                                            {
+                                                @($"{GetTimeAgo(context.LastUpdated.Value)} | {context.LastModifiedBy ?? ""}")
+                                            }
+                                            else
+                                            {
+                                                <MudText Color="Color.Info" Typo="Typo.caption">New</MudText>
+                                            }
+                                        </MudText>
+                                    </MudTd>
                                     @if (UserState.Role != "opening" && UserState.Role != "admin")
                                    {
                                        <MudTd>@context.Stock</MudTd>
@@ -75,6 +75,7 @@
                                   <MudTd>
                                       <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
                                           <MudMenuItem OnClick="@(() => EditProduct(context))">Update</MudMenuItem>
+                                          <MudMenuItem OnClick="@(() => AddStockProduct(context))">Add Stock</MudMenuItem>
                                       </MudMenu>
                                   </MudTd>
                               </RowTemplate>
@@ -208,6 +209,48 @@
         </MudOverlay>
     }
 
+    <!-- Add Stock Modal -->
+    @if (_isAddStockDialogOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+            <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                    <MudText Typo="Typo.h6">Add Stock</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                  OnClick="CloseAddStockModal" 
+                                  Size="Size.Small" 
+                                  Color="Color.Inherit"
+                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                </MudCardHeader>
+                
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_addingStockProduct.Name" Label="Product Name" Variant="Variant.Outlined" ReadOnly="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="_addStockQuantity" Label="Add Stock Quantity" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
+                    <MudButton OnClick="CloseAddStockModal" Variant="Variant.Text" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
+                    <MudButton OnClick="SaveAddStock" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Add Stock</span>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudOverlay>
+    }
+
     <!-- Filter Modal -->
     @if (_isFilterModalOpen)
     {
@@ -318,6 +361,9 @@
     private string _selectedCategory = "";
          private bool _isEditProductDialogOpen;
      private Product _editingProduct;
+    private bool _isAddStockDialogOpen;
+    private Product _addingStockProduct;
+    private int _addStockQuantity = 0;
     
     // Separate filter state for the modal
     private string _tempSearchString = "";
@@ -445,6 +491,24 @@
         _isEditProductDialogOpen = true;
     }
 
+    private void AddStockProduct(Product product)
+    {
+        _addingStockProduct = new Product
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Category = product.Category,
+            Stock = product.Stock,
+            LowStockThreshold = product.LowStockThreshold,
+            Price = product.Price,
+            Status = product.Status,
+            StatusColor = product.StatusColor,
+            CreatedAt = product.CreatedAt
+        };
+        _addStockQuantity = 0;
+        _isAddStockDialogOpen = true;
+    }
+
     private async Task DeleteProduct(Product product)
     {
         try
@@ -564,6 +628,84 @@
     {
         _isEditProductDialogOpen = false;
         StateHasChanged();
+    }
+
+    private void CloseAddStockModal()
+    {
+        _isAddStockDialogOpen = false;
+        StateHasChanged();
+    }
+
+    private async Task SaveAddStock()
+    {
+        if (_addStockQuantity <= 0)
+        {
+            ShowCenteredNotification("Please enter a valid quantity to add", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            _isSaving = true;
+            StateHasChanged();
+
+            // Get the original product to find the current stock
+            var originalProduct = _products.FirstOrDefault(p => p.Id == _addingStockProduct.Id);
+            if (originalProduct != null)
+            {
+                // Add the stock quantity to the existing stock
+                var updatedStock = originalProduct.Stock + _addStockQuantity;
+                
+                // Create a new product object with the updated stock
+                var updatedProduct = new Product
+                {
+                    Id = originalProduct.Id,
+                    Name = originalProduct.Name,
+                    Category = originalProduct.Category,
+                    Stock = updatedStock,
+                    LowStockThreshold = originalProduct.LowStockThreshold,
+                    Price = originalProduct.Price,
+                    Status = GetStatusText(updatedStock, originalProduct.LowStockThreshold),
+                    StatusColor = GetStatusColor(updatedStock, originalProduct.LowStockThreshold),
+                    CreatedAt = originalProduct.CreatedAt,
+                    LastUpdated = DateTime.UtcNow
+                };
+
+                var success = await FirebaseService.UpdateProductAsync(updatedProduct, UserState.CurrentUser?.Username ?? "");
+                if (success)
+                {
+                    // Check for low stock conditions and create activities
+                    await FirebaseService.CheckLowStockAndCreateActivityAsync(updatedProduct);
+                    
+                    // Find and update the original product in the list
+                    var index = _products.FindIndex(p => p.Id == updatedProduct.Id);
+                    if (index != -1)
+                    {
+                        _products[index] = updatedProduct;
+                    }
+                    
+                    _isAddStockDialogOpen = false;
+                    ShowCenteredNotification($"Added {_addStockQuantity} stock to '{_addingStockProduct.Name}' successfully", Severity.Success);
+                    
+                    // Clear cache to force fresh data load
+                    ClearCache();
+                    await LoadProducts();
+                }
+                else
+                {
+                    ShowCenteredNotification($"Failed to add stock to '{_addingStockProduct.Name}'", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCenteredNotification($"Error adding stock: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
     }
 
     private async Task UpdateProduct()

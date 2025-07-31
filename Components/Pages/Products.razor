@@ -3,6 +3,7 @@
 @inject FirebaseService FirebaseService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject UserStateService UserState
 
 <PageTitle>Products</PageTitle>
 
@@ -70,14 +71,14 @@
                                 <MudTd>₱@context.Price.ToString("N0")</MudTd>
                                 <MudTd>
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                        @if (context.LastUpdated.HasValue)
-                                        {
-                                            @GetTimeAgo(context.LastUpdated.Value)
-                                        }
-                                        else
-                                        {
-                                            <MudText Color="Color.Info" Typo="Typo.caption">New</MudText>
-                                        }
+                                                                @if (context.LastUpdated.HasValue)
+                        {
+                            @($"{GetTimeAgo(context.LastUpdated.Value)} | {context.LastModifiedBy ?? ""}")
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Info" Typo="Typo.caption">New</MudText>
+                        }
                                     </MudText>
                                 </MudTd>
                                 <MudTd>
@@ -600,7 +601,7 @@
             _newProduct.Status = GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold);
             _newProduct.StatusColor = GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold);
 
-            var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct);
+            var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct, UserState.CurrentUser?.Username ?? "");
             if (success)
             {
                 // Clear cache to force fresh data load
@@ -656,7 +657,7 @@
             _editingProduct.Status = GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold);
             _editingProduct.StatusColor = GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold);
 
-            var success = await FirebaseService.UpdateProductAsync(_editingProduct);
+            var success = await FirebaseService.UpdateProductAsync(_editingProduct, UserState.CurrentUser?.Username ?? "");
             if (success)
             {
                 // Check for low stock conditions and create activities
@@ -673,6 +674,8 @@
                     originalProduct.Price = _editingProduct.Price;
                     originalProduct.Status = _editingProduct.Status;
                     originalProduct.StatusColor = _editingProduct.StatusColor;
+                    originalProduct.LastUpdated = DateTime.UtcNow.AddHours(8); // Philippine time
+                    originalProduct.LastModifiedBy = UserState.CurrentUser?.Username ?? "Unknown";
                 }
                 
                 _isEditProductDialogOpen = false;
