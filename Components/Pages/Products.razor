@@ -47,7 +47,7 @@
                 <MudCardContent Class="pa-2 pa-sm-4">
                     @if (FilteredProducts.Any())
                     {
-                        <MudTable Items="@FilteredProducts" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm">
+                                                 <MudTable Items="@FilteredProducts" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Xs" Responsive="true">
                             <HeaderContent>
                                 <MudTh>Product Name</MudTh>
                                 <MudTh>Category</MudTh>
@@ -66,8 +66,8 @@
                                 <MudTd>@context.CreatedAt.ToString("MM/dd/yy")</MudTd>
                                 <MudTd>
                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
-                                        <MudMenuItem OnClick="@(() => EditProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />Edit</MudMenuItem>
-                                        <MudMenuItem OnClick="@(() => DeleteProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-2" />Delete</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => EditProduct(context))">Edit</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => DeleteProduct(context))">Delete</MudMenuItem>
                                     </MudMenu>
                                 </MudTd>
                             </RowTemplate>

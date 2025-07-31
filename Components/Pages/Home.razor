@@ -401,10 +401,7 @@ else
                         <MudText Typo="Typo.body1" Class="mb-4">@_selectedReminder?.Message</MudText>
                         <MudDivider Class="my-3" />
                         <div class="d-flex align-center justify-space-between">
-                            <div class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" Class="mr-2" />
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">Created by: @_selectedReminder?.CreatedBy</MudText>
-                            </div>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@_selectedReminder?.CreatedBy</MudText>
                             <MudText Typo="Typo.body2" Color="Color.Secondary">@_selectedReminder?.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</MudText>
                         </div>
                     </MudCardContent>

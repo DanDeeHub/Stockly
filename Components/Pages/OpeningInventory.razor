@@ -13,7 +13,7 @@
             <MudText Typo="Typo.h4" Class="mb-2 mb-sm-0">Opening Inventory</MudText>
             
             <div class="d-flex gap-1 gap-sm-2 flex-wrap">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" Elevation="0" Style="height: 40px; min-width: 100px; max-width: 140px;">Bulk Edit</MudButton>
+                                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="height: 40px; min-width: 100px; max-width: 140px;">Bulk Edit</MudButton>
             </div>
         </div>
         
@@ -22,7 +22,7 @@
             <MudCardContent Class="pa-2 pa-sm-4">
                 <div class="d-flex gap-2 align-center" style="align-items: center;">
                     <MudTextField @bind-Value="_searchString" Placeholder="Search products or categories..." Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Style="height: 40px; flex: 1; min-height: 40px; max-height: 40px; line-height: 40px;" />
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FilterList" Size="Size.Small" Elevation="0" Style="height: 40px; min-width: 100px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="OpenFilterModal">Filter</MudButton>
+                                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FilterList" Size="Size.Small" Style="height: 40px; min-width: 100px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="OpenFilterModal">Filter</MudButton>
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Style="height: 40px; width: 40px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="ClearAllFilters" title="Clear all filters" Color="Color.Secondary" Variant="Variant.Outlined"></MudIconButton>
                 </div>
             </MudCardContent>
@@ -45,7 +45,7 @@
                 <MudCardContent Class="pa-2 pa-sm-4">
                     @if (FilteredProducts.Any())
                     {
-                                                 <MudTable Items="@FilteredProducts" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm">
+                                                 <MudTable Items="@FilteredProducts" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Xs" Responsive="true">
                              <HeaderContent>
                                  <MudTh>Product Name</MudTh>
                                  <MudTh>Category</MudTh>
@@ -56,12 +56,11 @@
                                  <MudTd>@context.Name</MudTd>
                                  <MudTd>@context.Category</MudTd>
                                  <MudTd><MudText Color="@context.StatusColor" Typo="Typo.body2">@context.Status</MudText></MudTd>
-                                 <MudTd>
-                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
-                                         <MudMenuItem OnClick="@(() => EditProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />Edit</MudMenuItem>
-                                         <MudMenuItem OnClick="@(() => DeleteProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-2" />Delete</MudMenuItem>
-                                     </MudMenu>
-                                 </MudTd>
+                                                                   <MudTd>
+                                      <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                                          <MudMenuItem OnClick="@(() => EditProduct(context))">Update</MudMenuItem>
+                                      </MudMenu>
+                                  </MudTd>
                              </RowTemplate>
                              <PagerContent><MudTablePager /></PagerContent>
                          </MudTable>
@@ -122,8 +121,8 @@
                 </MudCardContent>
                 
                 <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
-                    <MudButton OnClick="CloseModal" Variant="Variant.Text" Elevation="0" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
-                    <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary" Elevation="0" Disabled="@_isSaving">
+                                         <MudButton OnClick="CloseModal" Variant="Variant.Text" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
+                                         <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
                         @if (_isSaving)
                         {
                             <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
@@ -143,8 +142,8 @@
     {
         <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
             <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
-                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
-                    <MudText Typo="Typo.h6">Edit Product</MudText>
+                                 <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                     <MudText Typo="Typo.h6">Update Product</MudText>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" 
                                   OnClick="CloseEditModal" 
                                   Size="Size.Small" 
@@ -152,37 +151,23 @@
                                   Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
                 </MudCardHeader>
                 
-                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
-                    <MudGrid>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="_editingProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudAutocomplete T="string" @bind-Value="_editingProduct.Category" Label="Category" Variant="Variant.Outlined" Required="true" 
-                                             SearchFunc="SearchCategories" ToStringFunc="@(category => category)" 
-                                             allowCustomValue="true"
-                                             MaxItems="5" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudNumericField @bind-Value="_editingProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudNumericField @bind-Value="_editingProduct.LowStockThreshold" Label="Low Stock Threshold" Variant="Variant.Outlined" Required="true" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudNumericField @bind-Value="_editingProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
-                                Status: <MudText Color="@GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold)" Typo="Typo.body2">@GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold)</MudText>
-                            </MudText>
-                        </MudItem>
-                    </MudGrid>
-                </MudCardContent>
+                                 <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                     <MudGrid>
+                         <MudItem xs="12">
+                             <MudTextField @bind-Value="_editingProduct.Name" Label="Product Name" Variant="Variant.Outlined" ReadOnly="true" />
+                         </MudItem>
+                         <MudItem xs="12">
+                             <MudTextField @bind-Value="_editingProduct.Category" Label="Category" Variant="Variant.Outlined" ReadOnly="true" />
+                         </MudItem>
+                         <MudItem xs="12">
+                             <MudNumericField @bind-Value="_editingProduct.Stock" Label="Update Quantity" Variant="Variant.Outlined" Required="true" />
+                         </MudItem>
+                     </MudGrid>
+                 </MudCardContent>
                 
                 <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
-                    <MudButton OnClick="CloseEditModal" Variant="Variant.Text" Elevation="0" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
-                    <MudButton OnClick="UpdateProduct" Variant="Variant.Filled" Color="Color.Primary" Elevation="0" Disabled="@_isSaving">
+                                         <MudButton OnClick="CloseEditModal" Variant="Variant.Text" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
+                                         <MudButton OnClick="UpdateProduct" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
                         @if (_isSaving)
                         {
                             <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
@@ -242,8 +227,8 @@
                 </MudCardContent>
                 
                 <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
-                    <MudButton OnClick="CloseFilterModal" Variant="Variant.Text" Elevation="0" Class="mr-2">Cancel</MudButton>
-                    <MudButton OnClick="ApplyFilters" Variant="Variant.Filled" Color="Color.Primary" Elevation="0">Apply Filters</MudButton>
+                                         <MudButton OnClick="CloseFilterModal" Variant="Variant.Text" Class="mr-2">Cancel</MudButton>
+                     <MudButton OnClick="ApplyFilters" Variant="Variant.Filled" Color="Color.Primary">Apply Filters</MudButton>
                 </MudCardActions>
             </MudCard>
         </MudOverlay>
@@ -276,18 +261,16 @@
                 </MudCardContent>
                 
                 <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
-                    <MudButton OnClick="CancelDelete" 
-                              Variant="Variant.Text" 
-                              Elevation="0" 
-                              Class="mr-2" 
-                              Disabled="@_isSaving">
+                                         <MudButton OnClick="CancelDelete" 
+                               Variant="Variant.Text" 
+                               Class="mr-2" 
+                               Disabled="@_isSaving">
                         Cancel
                     </MudButton>
-                    <MudButton OnClick="ConfirmDelete" 
-                              Variant="Variant.Filled" 
-                              Color="Color.Error" 
-                              Elevation="0" 
-                              Disabled="@_isSaving">
+                                         <MudButton OnClick="ConfirmDelete" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Error" 
+                               Disabled="@_isSaving">
                         @if (_isSaving)
                         {
                             <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
@@ -300,8 +283,10 @@
                 </MudCardActions>
             </MudCard>
         </MudOverlay>
-    }
-</AuthorizedPageBase>
+         }
+     
+     
+ </AuthorizedPageBase>
 
 @code {
     private string _searchString = "";
@@ -314,8 +299,8 @@
     private string _sortOrder = "name_asc";
     private string _selectedCategory = "";
     private string _selectedStatus = "";
-    private bool _isEditProductDialogOpen;
-    private Product _editingProduct;
+         private bool _isEditProductDialogOpen;
+     private Product _editingProduct;
     
     // Separate filter state for the modal
     private string _tempSearchString = "";
@@ -487,12 +472,14 @@
         StateHasChanged();
     }
 
-    private void CancelDelete()
-    {
-        _isDeleteConfirmationOpen = false;
-        _deleteConfirmationTcs?.SetResult(false);
-        StateHasChanged();
-    }
+         private void CancelDelete()
+     {
+         _isDeleteConfirmationOpen = false;
+         _deleteConfirmationTcs?.SetResult(false);
+         StateHasChanged();
+     }
+     
+
 
     private void OpenAddProductDialog()
     {
