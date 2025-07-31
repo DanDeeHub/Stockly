@@ -1,5 +1,6 @@
-﻿@using Stockly.Services
-@inject UserStateService UserState
+﻿@using Stockly.Interfaces
+@using Stockly.Services
+@inject IUserStateService UserState
 @inject NavigationManager Navigation
 @inject DrawerService DrawerService
 
@@ -88,7 +89,7 @@
     private async Task ConfirmLogout()
     {
         showLogoutConfirm = false;
-        await UserState.LogoutAsync();
+        await UserState.ClearUserStateAsync();
         DrawerService.Close();
         Navigation.NavigateTo("/Login");
     }

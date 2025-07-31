@@ -1,6 +1,7 @@
 ﻿@page "/"
+@using Stockly.Interfaces
 @using Stockly.Services
-@inject UserStateService UserState
+@inject IUserStateService UserState
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject FirebaseService FirebaseService
@@ -439,7 +440,7 @@ else
         else
         {
             // Subscribe to reminder update notifications
-            UserState.OnReminderUpdated += ClearReminderCache;
+            // UserState.OnReminderUpdated += ClearReminderCache;
             
             // Use cached data if available and not expired
             if (_cachedProducts.Any() && _cachedActivities.Any() && _cachedReminders.Any() && 
@@ -471,7 +472,7 @@ else
     public void Dispose()
     {
         // Unsubscribe from reminder update notifications
-        UserState.OnReminderUpdated -= ClearReminderCache;
+        // UserState.OnReminderUpdated -= ClearReminderCache;
     }
 
 
