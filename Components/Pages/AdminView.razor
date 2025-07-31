@@ -47,16 +47,14 @@
                                              AdornmentIcon="@Icons.Material.Filled.Title" />
                             </MudItem>
                             
-                                                         <MudItem xs="12">
-                                 <MudTextField @bind-Value="_newReminder.Message" 
-                                              Label="Message" 
-                                              Variant="Variant.Outlined" 
-                                              Required="true" 
-                                              RequiredError="Please enter a message"
-                                              Lines="8"
-                                              Adornment="Adornment.Start" 
-                                              AdornmentIcon="@Icons.Material.Filled.Message" />
-                             </MudItem>
+                                                                                     <MudItem xs="12">
+                                <MudTextField @bind-Value="_newReminder.Message" 
+                                             Label="Message" 
+                                             Variant="Variant.Outlined" 
+                                             Required="true" 
+                                             RequiredError="Please enter a message"
+                                             Lines="20" />
+                            </MudItem>
                             
                             @if (!string.IsNullOrEmpty(reminderErrorMessage))
                             {

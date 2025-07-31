@@ -1,41 +1,748 @@
 ﻿@page "/OpeningInventory"
+@using Stockly.Services
+@inject FirebaseService FirebaseService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <PageTitle>Opening Inventory</PageTitle>
 
 <AuthorizedPageBase PageName="OpeningInventory">
-    <div class="pa-4">
-        <MudText Typo="Typo.h4" Class="mb-4">Opening Shift Inventory</MudText>
-        <MudText Typo="Typo.body1" Class="mb-4">
-            Manage opening shift inventory and stock counts.
-        </MudText>
+    <div class="pa-2 pa-sm-4">
+        <!-- Header with Buttons -->
+        <div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-3 mb-sm-6">
+            <MudText Typo="Typo.h4" Class="mb-2 mb-sm-0">Opening Inventory</MudText>
+            
+            <div class="d-flex gap-1 gap-sm-2 flex-wrap">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" Elevation="0" Style="height: 40px; min-width: 100px; max-width: 140px;">Bulk Edit</MudButton>
+            </div>
+        </div>
         
-        <MudGrid Class="mt-4">
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard>
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6">Stock Count</MudText>
-                        <MudText Typo="Typo.body2">Record opening stock levels</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-            
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard>
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6">Inventory Check</MudText>
-                        <MudText Typo="Typo.body2">Verify inventory accuracy</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-            
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard>
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6">Reports</MudText>
-                        <MudText Typo="Typo.body2">View opening shift reports</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-        </MudGrid>
+        <!-- Search and Filter Section -->
+        <MudCard Elevation="0" Class="mb-3 mb-sm-4">
+            <MudCardContent Class="pa-2 pa-sm-4">
+                <div class="d-flex gap-2 align-center" style="align-items: center;">
+                    <MudTextField @bind-Value="_searchString" Placeholder="Search products or categories..." Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Style="height: 40px; flex: 1; min-height: 40px; max-height: 40px; line-height: 40px;" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FilterList" Size="Size.Small" Elevation="0" Style="height: 40px; min-width: 100px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="OpenFilterModal">Filter</MudButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Style="height: 40px; width: 40px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="ClearAllFilters" title="Clear all filters" Color="Color.Secondary" Variant="Variant.Outlined"></MudIconButton>
+                </div>
+            </MudCardContent>
+        </MudCard>
+        
+        <!-- Loading State -->
+        @if (_isLoading)
+        {
+            <MudCard Elevation="0">
+                <MudCardContent Class="pa-4 text-center">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    <MudText Class="mt-2">Loading products...</MudText>
+                </MudCardContent>
+            </MudCard>
+        }
+        else
+        {
+            <!-- Products Table -->
+            <MudCard Elevation="0">
+                <MudCardContent Class="pa-2 pa-sm-4">
+                    @if (FilteredProducts.Any())
+                    {
+                                                 <MudTable Items="@FilteredProducts" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm">
+                             <HeaderContent>
+                                 <MudTh>Product Name</MudTh>
+                                 <MudTh>Category</MudTh>
+                                 <MudTh>Status</MudTh>
+                                 <MudTh>Action</MudTh>
+                             </HeaderContent>
+                             <RowTemplate>
+                                 <MudTd>@context.Name</MudTd>
+                                 <MudTd>@context.Category</MudTd>
+                                 <MudTd><MudText Color="@context.StatusColor" Typo="Typo.body2">@context.Status</MudText></MudTd>
+                                 <MudTd>
+                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                                         <MudMenuItem OnClick="@(() => EditProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />Edit</MudMenuItem>
+                                         <MudMenuItem OnClick="@(() => DeleteProduct(context))"><MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-2" />Delete</MudMenuItem>
+                                     </MudMenu>
+                                 </MudTd>
+                             </RowTemplate>
+                             <PagerContent><MudTablePager /></PagerContent>
+                         </MudTable>
+                    }
+                    else
+                    {
+                        <div class="text-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" />
+                            <MudText Typo="Typo.h6" Class="mt-2">No products found</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Add your first product to get started</MudText>
+                        </div>
+                    }
+                </MudCardContent>
+            </MudCard>
+        }
     </div>
+    
+    <!-- Add Product Modal -->
+    @if (_isAddProductDialogOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+            <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                    <MudText Typo="Typo.h6">Add New Product</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                  OnClick="CloseModal" 
+                                  Size="Size.Small" 
+                                  Color="Color.Inherit"
+                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                </MudCardHeader>
+                
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_newProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudAutocomplete T="string" @bind-Value="_newProduct.Category" Label="Category" Variant="Variant.Outlined" Required="true" 
+                                             SearchFunc="SearchCategories" ToStringFunc="@(category => category)" 
+                                             allowCustomValue="true"
+                                             MaxItems="5" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="_newProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="_newProduct.LowStockThreshold" Label="Low Stock Threshold" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="_newProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                                Status: <MudText Color="@GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold)" Typo="Typo.body2">@GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold)</MudText>
+                            </MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
+                    <MudButton OnClick="CloseModal" Variant="Variant.Text" Elevation="0" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
+                    <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary" Elevation="0" Disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Save Product</span>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudOverlay>
+    }
+
+    <!-- Edit Product Modal -->
+    @if (_isEditProductDialogOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+            <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                    <MudText Typo="Typo.h6">Edit Product</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                  OnClick="CloseEditModal" 
+                                  Size="Size.Small" 
+                                  Color="Color.Inherit"
+                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                </MudCardHeader>
+                
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_editingProduct.Name" Label="Product Name" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudAutocomplete T="string" @bind-Value="_editingProduct.Category" Label="Category" Variant="Variant.Outlined" Required="true" 
+                                             SearchFunc="SearchCategories" ToStringFunc="@(category => category)" 
+                                             allowCustomValue="true"
+                                             MaxItems="5" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="_editingProduct.Stock" Label="Stock Quantity" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="_editingProduct.LowStockThreshold" Label="Low Stock Threshold" Variant="Variant.Outlined" Required="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField @bind-Value="_editingProduct.Price" Label="Price" Variant="Variant.Outlined" Required="true" Adornment="Adornment.Start" AdornmentText="₱" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                                Status: <MudText Color="@GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold)" Typo="Typo.body2">@GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold)</MudText>
+                            </MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
+                    <MudButton OnClick="CloseEditModal" Variant="Variant.Text" Elevation="0" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
+                    <MudButton OnClick="UpdateProduct" Variant="Variant.Filled" Color="Color.Primary" Elevation="0" Disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Update Product</span>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudOverlay>
+    }
+
+    <!-- Filter Modal -->
+    @if (_isFilterModalOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+            <MudCard Style="width: 95%; max-width: 500px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                    <MudText Typo="Typo.h6">Filter Products</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                  OnClick="CloseFilterModal" 
+                                  Size="Size.Small" 
+                                  Color="Color.Inherit"
+                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                </MudCardHeader>
+                
+                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.subtitle1" Class="mb-2">Sort By</MudText>
+                            <MudSelect ShrinkLabel @bind-Value="_tempSortOrder" Label="Sort Order" Variant="Variant.Outlined" FullWidth="true">
+                                <MudSelectItem Value="@("name_asc")">Name Ascending</MudSelectItem>
+                                <MudSelectItem Value="@("name_desc")">Name Descending</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.subtitle1" Class="mb-2">Category</MudText>
+                            <MudAutocomplete T="string" @bind-Value="_tempSelectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true"
+                                             SearchFunc="SearchFilterCategories" ToStringFunc="@(category => category)" 
+                                             AllowCustomValue="true"
+                                             MaxItems="10" />
+                        </MudItem>
+                        
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.subtitle1" Class="mb-2">Stock Status</MudText>
+                            <MudSelect ShrinkLabel @bind-Value="_tempSelectedStatus" Label="Select Status" Variant="Variant.Outlined" FullWidth="true">
+                                <MudSelectItem Value="@("")">All Status</MudSelectItem>
+                                <MudSelectItem Value="@("In stock")">In Stock</MudSelectItem>
+                                <MudSelectItem Value="@("Low stock")">Low Stock</MudSelectItem>
+                                <MudSelectItem Value="@("Out of stock")">Out of Stock</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
+                    <MudButton OnClick="CloseFilterModal" Variant="Variant.Text" Elevation="0" Class="mr-2">Cancel</MudButton>
+                    <MudButton OnClick="ApplyFilters" Variant="Variant.Filled" Color="Color.Primary" Elevation="0">Apply Filters</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudOverlay>
+    }
+    
+    <!-- Custom Delete Confirmation Modal -->
+    @if (_isDeleteConfirmationOpen)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
+            <MudCard Style="width: 95%; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
+                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
+                    <MudText Typo="Typo.h6">Confirm Delete</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                  OnClick="CancelDelete" 
+                                  Size="Size.Small" 
+                                  Color="Color.Inherit"
+                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
+                </MudCardHeader>
+                
+                <MudCardContent Class="pa-2 pa-sm-4">
+                    <div class="text-center mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Large" Color="Color.Warning" Class="mb-3" />
+                        <MudText Typo="Typo.body1" Class="mb-3">
+                            Are you sure you want to delete the product "<strong>@_deleteConfirmationProductName</strong>"?
+                        </MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Warning">
+                            This action cannot be undone.
+                        </MudText>
+                    </div>
+                </MudCardContent>
+                
+                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
+                    <MudButton OnClick="CancelDelete" 
+                              Variant="Variant.Text" 
+                              Elevation="0" 
+                              Class="mr-2" 
+                              Disabled="@_isSaving">
+                        Cancel
+                    </MudButton>
+                    <MudButton OnClick="ConfirmDelete" 
+                              Variant="Variant.Filled" 
+                              Color="Color.Error" 
+                              Elevation="0" 
+                              Disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <span>Delete Product</span>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudOverlay>
+    }
 </AuthorizedPageBase>
+
+@code {
+    private string _searchString = "";
+    private bool _isAddProductDialogOpen;
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private Product _newProduct = new Product();
+    private List<Product> _products = [];
+    private bool _isFilterModalOpen;
+    private string _sortOrder = "name_asc";
+    private string _selectedCategory = "";
+    private string _selectedStatus = "";
+    private bool _isEditProductDialogOpen;
+    private Product _editingProduct;
+    
+    // Separate filter state for the modal
+    private string _tempSearchString = "";
+    private string _tempSortOrder = "name_asc";
+    private string _tempSelectedCategory = "";
+    private string _tempSelectedStatus = "";
+
+    private string _deleteConfirmationProductName = "";
+    private bool _isDeleteConfirmationOpen = false;
+    private TaskCompletionSource<bool> _deleteConfirmationTcs = null;
+    
+    // Caching variables
+    private static List<Product> _cachedProducts = [];
+    private static DateTime _lastCacheUpdate = DateTime.MinValue;
+    private static readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5); // Cache for 5 minutes
+
+    public OpeningInventory() {
+        _isAddProductDialogOpen = false;
+    }
+
+    override protected async Task OnInitializedAsync()
+    {
+        // Use cached data if available and not expired
+        if (_cachedProducts.Any() && DateTime.Now - _lastCacheUpdate < _cacheExpiration)
+        {
+            _products = _cachedProducts;
+            _isLoading = false;
+            StateHasChanged(); // Show cached data immediately
+            
+            // Load fresh data in background without showing loading state
+            _ = Task.Run(async () => await LoadProducts());
+        }
+        else
+        {
+            // No valid cache, load data normally
+            await LoadProducts();
+        }
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            // Only show loading state if we don't have cached data
+            if (!_cachedProducts.Any() || DateTime.Now - _lastCacheUpdate >= _cacheExpiration)
+            {
+                await InvokeAsync(() => _isLoading = true);
+            }
+            
+            // Test Firebase connection first
+            var connectionTest = await FirebaseService.TestConnectionAsync();
+            if (!connectionTest)
+            {
+                await InvokeAsync(() => ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error));
+                return;
+            }
+            
+            _products = await FirebaseService.GetProductsAsync();
+            _cachedProducts = _products; // Cache the loaded products
+            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
+        }
+        catch (Exception ex)
+        {
+            await InvokeAsync(() => ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error));
+        }
+        finally
+        {
+            await InvokeAsync(() => 
+            {
+                _isLoading = false;
+                StateHasChanged();
+            });
+        }
+    }
+
+    private void ClearCache()
+    {
+        _cachedProducts.Clear();
+        _lastCacheUpdate = DateTime.MinValue;
+    }
+
+    private List<Product> FilteredProducts
+    {
+        get
+        {
+            var filtered = _products.Where(product => 
+                (string.IsNullOrEmpty(_searchString) || 
+                 product.Name.ToLower().Contains(_searchString.ToLower()) ||
+                 product.Category.ToLower().Contains(_searchString.ToLower())) &&
+                (string.IsNullOrEmpty(_selectedCategory) || product.Category == _selectedCategory) &&
+                (string.IsNullOrEmpty(_selectedStatus) || product.Status == _selectedStatus));
+
+            return _sortOrder switch
+            {
+                "name_asc" => filtered.OrderBy(p => p.Name).ToList(),
+                "name_desc" => filtered.OrderByDescending(p => p.Name).ToList(),
+                _ => filtered.OrderBy(p => p.Name).ToList()
+            };
+        }
+    }
+
+    private void ViewProduct(Product product)
+    {
+        // TODO: Implement view product functionality
+        ShowCenteredNotification($"Viewing product: {product.Name}", Severity.Info);
+    }
+
+    private void EditProduct(Product product)
+    {
+        // Create a copy of the product to avoid modifying the original until saved
+        _editingProduct = new Product
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Category = product.Category,
+            Stock = product.Stock,
+            LowStockThreshold = product.LowStockThreshold,
+            Price = product.Price,
+            Status = product.Status,
+            StatusColor = product.StatusColor,
+            CreatedAt = product.CreatedAt
+        };
+        _isEditProductDialogOpen = true;
+    }
+
+    private async Task DeleteProduct(Product product)
+    {
+        try
+        {
+            var confirmed = await ShowDeleteConfirmation(product.Name);
+            if (confirmed)
+            {
+                var success = await FirebaseService.DeleteProductWithActivityAsync(product);
+                if (success)
+                {
+                    // Clear cache to force fresh data load
+                    ClearCache();
+                    await LoadProducts();
+                    ShowCenteredNotification($"Product '{product.Name}' deleted successfully", Severity.Success);
+                }
+                else
+                {
+                    ShowCenteredNotification($"Failed to delete product '{product.Name}'", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCenteredNotification($"Error deleting product: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task<bool> ShowDeleteConfirmation(string productName)
+    {
+        _deleteConfirmationProductName = productName;
+        _isDeleteConfirmationOpen = true;
+        StateHasChanged();
+        
+        // Wait for user response
+        var tcs = new TaskCompletionSource<bool>();
+        _deleteConfirmationTcs = tcs;
+        return await tcs.Task;
+    }
+
+    private void ConfirmDelete()
+    {
+        _isDeleteConfirmationOpen = false;
+        _deleteConfirmationTcs?.SetResult(true);
+        StateHasChanged();
+    }
+
+    private void CancelDelete()
+    {
+        _isDeleteConfirmationOpen = false;
+        _deleteConfirmationTcs?.SetResult(false);
+        StateHasChanged();
+    }
+
+    private void OpenAddProductDialog()
+    {
+        _newProduct = new Product();
+        _isAddProductDialogOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        _isAddProductDialogOpen = false;
+        StateHasChanged();
+    }
+
+    private async Task SaveProduct()
+    {
+        if (string.IsNullOrEmpty(_newProduct.Name) || string.IsNullOrEmpty(_newProduct.Category))
+        {
+            ShowCenteredNotification("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            _isSaving = true;
+            StateHasChanged();
+
+            // Check if product name already exists
+            var productExists = await FirebaseService.CheckProductNameExistsAsync(_newProduct.Name);
+            if (productExists)
+            {
+                ShowCenteredNotification($"A product with the name '{_newProduct.Name}' already exists. Please choose a different name.", Severity.Warning);
+                return;
+            }
+
+            // Automatically set status based on stock and threshold
+            _newProduct.Status = GetStatusText(_newProduct.Stock, _newProduct.LowStockThreshold);
+            _newProduct.StatusColor = GetStatusColor(_newProduct.Stock, _newProduct.LowStockThreshold);
+
+            var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct);
+            if (success)
+            {
+                // Clear cache to force fresh data load
+                ClearCache();
+                await LoadProducts();
+                _isAddProductDialogOpen = false;
+                ShowCenteredNotification($"Product '{_newProduct.Name}' added successfully", Severity.Success);
+            }
+            else
+            {
+                ShowCenteredNotification($"Failed to add product '{_newProduct.Name}'", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCenteredNotification($"Error saving product: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseEditModal()
+    {
+        _isEditProductDialogOpen = false;
+        StateHasChanged();
+    }
+
+    private async Task UpdateProduct()
+    {
+        if (string.IsNullOrEmpty(_editingProduct.Name) || string.IsNullOrEmpty(_editingProduct.Category))
+        {
+            ShowCenteredNotification("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            _isSaving = true;
+            StateHasChanged();
+
+            // Check if product name already exists (excluding the current product being edited)
+            var productExists = await FirebaseService.CheckProductNameExistsAsync(_editingProduct.Name, _editingProduct.Id);
+            if (productExists)
+            {
+                ShowCenteredNotification($"A product with the name '{_editingProduct.Name}' already exists. Please choose a different name.", Severity.Warning);
+                return;
+            }
+
+            // Automatically set status based on stock and threshold
+            _editingProduct.Status = GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+            _editingProduct.StatusColor = GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+
+            var success = await FirebaseService.UpdateProductAsync(_editingProduct);
+            if (success)
+            {
+                // Check for low stock conditions and create activities
+                await FirebaseService.CheckLowStockAndCreateActivityAsync(_editingProduct);
+                
+                // Find and update the original product in the list
+                var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
+                if (originalProduct != null)
+                {
+                    originalProduct.Name = _editingProduct.Name;
+                    originalProduct.Category = _editingProduct.Category;
+                    originalProduct.Stock = _editingProduct.Stock;
+                    originalProduct.LowStockThreshold = _editingProduct.LowStockThreshold;
+                    originalProduct.Price = _editingProduct.Price;
+                    originalProduct.Status = _editingProduct.Status;
+                    originalProduct.StatusColor = _editingProduct.StatusColor;
+                }
+                
+                _isEditProductDialogOpen = false;
+                ShowCenteredNotification($"Product '{_editingProduct.Name}' updated successfully", Severity.Success);
+                
+                // Clear cache to force fresh data load
+                ClearCache();
+                await LoadProducts();
+            }
+            else
+            {
+                ShowCenteredNotification($"Failed to update product '{_editingProduct.Name}'", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCenteredNotification($"Error updating product: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowCenteredNotification(string message, Severity severity)
+    {
+        Snackbar.Add(message, severity, config =>
+        {
+            config.RequireInteraction = false;
+            config.ShowCloseIcon = true;
+            config.VisibleStateDuration = 3000;
+        });
+    }
+
+    private void OpenFilterModal()
+    {
+        // Initialize temp values with current filter values
+        _tempSearchString = _searchString;
+        _tempSortOrder = _sortOrder;
+        _tempSelectedCategory = _selectedCategory;
+        _tempSelectedStatus = _selectedStatus;
+        _isFilterModalOpen = true;
+        StateHasChanged();
+    }
+
+    private void CloseFilterModal()
+    {
+        _isFilterModalOpen = false;
+        StateHasChanged();
+    }
+
+    private void ClearAllFilters()
+    {
+        // Clear all actual filter values immediately
+        _searchString = "";
+        _selectedCategory = "";
+        _selectedStatus = "";
+        _sortOrder = "name_asc";
+        
+        ShowCenteredNotification("All filters cleared", Severity.Info);
+        StateHasChanged();
+    }
+
+    private void ApplyFilters()
+    {
+        // Apply the temporary filter values to the actual filter values
+        _searchString = _tempSearchString;
+        _sortOrder = _tempSortOrder;
+        _selectedCategory = _tempSelectedCategory;
+        _tempSelectedStatus = _selectedStatus;
+        CloseFilterModal();
+        ShowCenteredNotification("Filters applied successfully", Severity.Success);
+    }
+
+    private List<string> AvailableCategories => _products.Select(p => p.Category).Distinct().ToList();
+
+    private async Task<IEnumerable<string>> SearchCategories(string value, CancellationToken cancellationToken)
+    {
+        // If no search value, return all categories
+        if (string.IsNullOrEmpty(value))
+            return AvailableCategories;
+
+        // Get matching categories
+        var matchingCategories = AvailableCategories
+            .Where(category => category.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // If the typed value is not in the list and it's not empty, add it as a custom option
+        if (!string.IsNullOrEmpty(value) && !matchingCategories.Contains(value))
+        {
+            matchingCategories.Add(value);
+        }
+
+        return matchingCategories;
+    }
+
+    private async Task<IEnumerable<string>> SearchFilterCategories(string value, CancellationToken cancellationToken)
+    {
+        // If no search value, return all categories plus "All Categories" option
+        if (string.IsNullOrEmpty(value))
+        {
+            var allCategories = new List<string> { "" }; // Empty string represents "All Categories"
+            allCategories.AddRange(AvailableCategories);
+            return allCategories;
+        }
+
+        // Get matching categories
+        var matchingCategories = AvailableCategories
+            .Where(category => category.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // If the typed value is not in the list and it's not empty, add it as a custom option
+        if (!string.IsNullOrEmpty(value) && !matchingCategories.Contains(value))
+        {
+            matchingCategories.Add(value);
+        }
+
+        return matchingCategories;
+    }
+
+    // Helper methods for automatic status calculation
+    private string GetStatusText(int stock, int threshold)
+    {
+        if (stock == 0)
+            return "Out of stock";
+        else if (stock <= threshold)
+            return "Low stock";
+        else
+            return "In stock";
+    }
+
+    private Color GetStatusColor(int stock, int threshold)
+    {
+        if (stock == 0)
+            return Color.Error;
+        else if (stock <= threshold)
+            return Color.Warning;
+        else
+            return Color.Success;
+    }
+}

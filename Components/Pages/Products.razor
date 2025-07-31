@@ -233,16 +233,13 @@
                              </MudSelect>
                          </MudItem>
                          
-                          <MudItem xs="12">
-                              <MudText Typo="Typo.subtitle1" Class="mb-2">Category</MudText>
-                              <MudSelect ShrinkLabel @bind-Value="_tempSelectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true">
-                                  <MudSelectItem Value="@("")">All Categories</MudSelectItem>
-                                  @foreach (var category in AvailableCategories)
-                                  {
-                                      <MudSelectItem Value="@category">@category</MudSelectItem>
-                                  }
-                              </MudSelect>
-                          </MudItem>
+                                                   <MudItem xs="12">
+                             <MudText Typo="Typo.subtitle1" Class="mb-2">Category</MudText>
+                             <MudAutocomplete T="string" @bind-Value="_tempSelectedCategory" Label="Select Category" Variant="Variant.Outlined" FullWidth="true"
+                                              SearchFunc="SearchFilterCategories" ToStringFunc="@(category => category)" 
+                                              AllowCustomValue="true"
+                                              MaxItems="10" />
+                         </MudItem>
                           
                           <MudItem xs="12">
                               <MudText Typo="Typo.subtitle1" Class="mb-2">Stock Status</MudText>
@@ -702,25 +699,49 @@
 
     private List<string> AvailableCategories => _products.Select(p => p.Category).Distinct().ToList();
 
-         private async Task<IEnumerable<string>> SearchCategories(string value, CancellationToken cancellationToken)
-     {
-         // If no search value, return all categories
-         if (string.IsNullOrEmpty(value))
-             return AvailableCategories;
+                   private async Task<IEnumerable<string>> SearchCategories(string value, CancellationToken cancellationToken)
+      {
+          // If no search value, return all categories
+          if (string.IsNullOrEmpty(value))
+              return AvailableCategories;
 
-         // Get matching categories
-         var matchingCategories = AvailableCategories
-             .Where(category => category.Contains(value, StringComparison.OrdinalIgnoreCase))
-             .ToList();
+          // Get matching categories
+          var matchingCategories = AvailableCategories
+              .Where(category => category.Contains(value, StringComparison.OrdinalIgnoreCase))
+              .ToList();
 
-         // If the typed value is not in the list and it's not empty, add it as a custom option
-         if (!string.IsNullOrEmpty(value) && !matchingCategories.Contains(value))
-         {
-             matchingCategories.Add(value);
-         }
+          // If the typed value is not in the list and it's not empty, add it as a custom option
+          if (!string.IsNullOrEmpty(value) && !matchingCategories.Contains(value))
+          {
+              matchingCategories.Add(value);
+          }
 
-         return matchingCategories;
-     }
+          return matchingCategories;
+      }
+
+      private async Task<IEnumerable<string>> SearchFilterCategories(string value, CancellationToken cancellationToken)
+      {
+          // If no search value, return all categories plus "All Categories" option
+          if (string.IsNullOrEmpty(value))
+          {
+              var allCategories = new List<string> { "" }; // Empty string represents "All Categories"
+              allCategories.AddRange(AvailableCategories);
+              return allCategories;
+          }
+
+          // Get matching categories
+          var matchingCategories = AvailableCategories
+              .Where(category => category.Contains(value, StringComparison.OrdinalIgnoreCase))
+              .ToList();
+
+          // If the typed value is not in the list and it's not empty, add it as a custom option
+          if (!string.IsNullOrEmpty(value) && !matchingCategories.Contains(value))
+          {
+              matchingCategories.Add(value);
+          }
+
+          return matchingCategories;
+      }
 
      // Helper methods for automatic status calculation
      private string GetStatusText(int stock, int threshold)

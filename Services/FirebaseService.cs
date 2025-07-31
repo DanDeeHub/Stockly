@@ -509,32 +509,21 @@ namespace Stockly.Services
                 var snapshot = await remindersRef.GetSnapshotAsync();
 
                 var reminders = new List<Reminder>();
-                var currentDate = DateTime.UtcNow.Date; // Get today's date only (no time) using UTC time
                 
                 foreach (var doc in snapshot.Documents)
                 {
                     var data = doc.ToDictionary();
                     var createdAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow;
-                    var reminderCreatedDate = createdAt.Date; // Get the date the reminder was created
                     
-                    // Check if reminder was created today
-                    if (reminderCreatedDate == currentDate)
+                    var reminder = new Reminder
                     {
-                        var reminder = new Reminder
-                        {
-                            Id = doc.Id,
-                            Title = data.ContainsKey("title") ? data["title"].ToString() : "",
-                            Message = data.ContainsKey("message") ? data["message"].ToString() : "",
-                            CreatedAt = createdAt,
-                            CreatedBy = data.ContainsKey("createdBy") ? data["createdBy"].ToString() : ""
-                        };
-                        reminders.Add(reminder);
-                    }
-                    else
-                    {
-                        // Delete old reminders (from previous days)
-                        await doc.Reference.DeleteAsync();
-                    }
+                        Id = doc.Id,
+                        Title = data.ContainsKey("title") ? data["title"].ToString() : "",
+                        Message = data.ContainsKey("message") ? data["message"].ToString() : "",
+                        CreatedAt = createdAt,
+                        CreatedBy = data.ContainsKey("createdBy") ? data["createdBy"].ToString() : ""
+                    };
+                    reminders.Add(reminder);
                 }
 
                 var result = reminders.OrderByDescending(r => r.CreatedAt).ToList();
