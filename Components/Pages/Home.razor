@@ -188,10 +188,10 @@ else
                     </MudCardHeader>
                     <MudCardContent>
                         <div class="d-flex flex-wrap gap-2">
-                                                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="HandleAddProductClick" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Add New Product</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="HandleAddProductClick" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Add New Product</MudButton>
                             <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Inventory" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Start Count</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" OnClick="OpenLowStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Low Stock Report</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="OpenOutOfStockModal" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Out of Stock</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Warning" OnClick="HandleLowStockClick" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Low Stock Report</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" OnClick="HandleOutOfStockClick" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Out of Stock</MudButton>
                             <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Download" Elevation="0" Style="flex: 1; min-width: 200px; height: 48px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Export Data</MudButton>
                         </div>
                     </MudCardContent>
@@ -560,6 +560,30 @@ else
         _isAddProductDialogOpen = true;
         _newProduct = new Product();
         StateHasChanged();
+    }
+
+    private void HandleLowStockClick()
+    {
+        // Check if user has permission to access low stock report
+        if (UserState.Role == "opening" || UserState.Role == "closing")
+        {
+            ShowCenteredNotification("You are not permitted to use this action", Severity.Warning);
+            return;
+        }
+        
+        OpenLowStockModal();
+    }
+
+    private void HandleOutOfStockClick()
+    {
+        // Check if user has permission to access out of stock report
+        if (UserState.Role == "opening" || UserState.Role == "closing")
+        {
+            ShowCenteredNotification("You are not permitted to use this action", Severity.Warning);
+            return;
+        }
+        
+        OpenOutOfStockModal();
     }
 
     private void OpenLowStockModal()
