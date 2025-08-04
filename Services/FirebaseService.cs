@@ -140,7 +140,7 @@ namespace Stockly.Services
                         Price = data.ContainsKey("price") ? Convert.ToDecimal(data["price"]) : 0,
                         LowStockThreshold = data.ContainsKey("lowStockThreshold") ? Convert.ToInt32(data["lowStockThreshold"]) : 10,
                         CreatedAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow,
-                        LastUpdated = data.ContainsKey("lastUpdated") ? ((Timestamp)data["lastUpdated"]).ToDateTime() : null,
+                        LastUpdated = data.ContainsKey("lastUpdated") ? ((Timestamp)data["lastUpdated"]).ToDateTime().AddHours(8) : null,
                         LastModifiedBy = data.ContainsKey("lastModifiedBy") ? data["lastModifiedBy"].ToString() : null,
                         OpeningAddedStock = data.ContainsKey("openingAddedStock") ? Convert.ToInt32(data["openingAddedStock"]) : 0
                     };
