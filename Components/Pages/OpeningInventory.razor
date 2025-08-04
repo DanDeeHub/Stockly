@@ -656,6 +656,9 @@
                 // Add the stock quantity to the existing stock
                 var updatedStock = originalProduct.Stock + _addStockQuantity;
                 
+                // Calculate the new cumulative opening added stock
+                var newOpeningAddedStock = originalProduct.OpeningAddedStock + _addStockQuantity;
+                
                 // Create a new product object with the updated stock
                 var updatedProduct = new Product
                 {
@@ -668,10 +671,11 @@
                     Status = GetStatusText(updatedStock, originalProduct.LowStockThreshold),
                     StatusColor = GetStatusColor(updatedStock, originalProduct.LowStockThreshold),
                     CreatedAt = originalProduct.CreatedAt,
-                    LastUpdated = DateTime.UtcNow
+                    LastUpdated = DateTime.UtcNow,
+                    OpeningAddedStock = newOpeningAddedStock
                 };
 
-                var success = await FirebaseService.UpdateProductAsync(updatedProduct, UserState.CurrentUser?.Username ?? "");
+                var success = await FirebaseService.UpdateProductStockAsync(originalProduct.Id, updatedStock, newOpeningAddedStock, UserState.CurrentUser?.Username ?? "");
                 if (success)
                 {
                     // Check for low stock conditions and create activities

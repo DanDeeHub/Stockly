@@ -141,7 +141,8 @@ namespace Stockly.Services
                         LowStockThreshold = data.ContainsKey("lowStockThreshold") ? Convert.ToInt32(data["lowStockThreshold"]) : 10,
                         CreatedAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow,
                         LastUpdated = data.ContainsKey("lastUpdated") ? ((Timestamp)data["lastUpdated"]).ToDateTime() : null,
-                        LastModifiedBy = data.ContainsKey("lastModifiedBy") ? data["lastModifiedBy"].ToString() : null
+                        LastModifiedBy = data.ContainsKey("lastModifiedBy") ? data["lastModifiedBy"].ToString() : null,
+                        OpeningAddedStock = data.ContainsKey("openingAddedStock") ? Convert.ToInt32(data["openingAddedStock"]) : 0
                     };
                     
                     // Set status color based on status
@@ -252,9 +253,42 @@ namespace Stockly.Services
                     { "status", product.Status },
                     { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
                     { "lowStockThreshold", product.LowStockThreshold },
+                    { "openingAddedStock", product.OpeningAddedStock },
                     { "updatedAt", Timestamp.FromDateTime(GetPhilippineTime()) },
                     { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) },
                     { "lastModifiedBy", modifiedBy }
+                };
+
+                await productRef.UpdateAsync(productData);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateProductStockAsync(string productId, int newStock, int openingAddedStock, string modifiedBy = "")
+        {
+            try
+            {
+                DocumentReference productRef = _db.Collection("products").Document(productId);
+                
+                // First, get the current product to check if LastModifiedBy already contains "opening"
+                var currentDoc = await productRef.GetSnapshotAsync();
+                var currentData = currentDoc.ConvertTo<Dictionary<string, object>>();
+                var currentLastModifiedBy = currentData.ContainsKey("lastModifiedBy") ? currentData["lastModifiedBy"].ToString() : "";
+                
+                // If the current LastModifiedBy already contains "opening", preserve it
+                // Otherwise, use the new modifiedBy value
+                var finalLastModifiedBy = currentLastModifiedBy.ToLower().Contains("opening") ? currentLastModifiedBy : modifiedBy;
+                
+                var productData = new Dictionary<string, object>
+                {
+                    { "stock", newStock },
+                    { "openingAddedStock", openingAddedStock },
+                    { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) },
+                    { "lastModifiedBy", finalLastModifiedBy }
                 };
 
                 await productRef.UpdateAsync(productData);
@@ -675,6 +709,7 @@ namespace Stockly.Services
         public DateTime? LastUpdated { get; set; } // Timestamp of last update
         public string? LastModifiedBy { get; set; } // Username who last modified the product
         public int LowStockThreshold { get; set; } = 10; // Default threshold for low stock alerts
+        public int OpeningAddedStock { get; set; } = 0; // Cumulative stock added by Opening role users
     }
 
     public class Activity

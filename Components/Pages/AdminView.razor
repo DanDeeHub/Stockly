@@ -18,6 +18,79 @@
             <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Notifications" Size="Size.Small" Elevation="0" Style="height: 40px; width: 180px; white-space: nowrap;" OnClick="OpenCreateReminderModal">Create Reminder</MudButton>
         </div>
         </div>
+        
+        <!-- Search and Filter Section -->
+        <MudCard Elevation="0" Class="mb-3 mb-sm-4">
+            <MudCardContent Class="pa-2 pa-sm-4">
+                <div class="d-flex gap-2 align-center" style="align-items: center;">
+                    <MudTextField @bind-Value="_searchString" Placeholder="Search products or categories..." Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Style="height: 40px; flex: 1; min-height: 40px; max-height: 40px; line-height: 40px;" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FilterList" Size="Size.Small" Style="height: 40px; min-width: 100px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="OpenFilterModal">Filter</MudButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Style="height: 40px; width: 40px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="ClearAllFilters" title="Clear all filters" Color="Color.Secondary" Variant="Variant.Outlined"></MudIconButton>
+                </div>
+            </MudCardContent>
+        </MudCard>
+        
+        <!-- Loading State -->
+        @if (_isLoading)
+        {
+            <MudCard Elevation="0">
+                <MudCardContent Class="pa-4 text-center">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                                         <MudText Class="mt-2">Loading opening-modified products...</MudText>
+                </MudCardContent>
+            </MudCard>
+        }
+        else
+        {
+            <!-- Products Table -->
+            <MudCard Elevation="0">
+                <MudCardContent Class="pa-2 pa-sm-4">
+                    @if (FilteredProducts.Any())
+                    {
+                        <MudTable Items="@FilteredProducts" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Xs" Responsive="true">
+                            <HeaderContent>
+                                <MudTh>Product Name</MudTh>
+                                <MudTh>Category</MudTh>
+                                <MudTh>Added</MudTh>
+                                <MudTh>Opening</MudTh>
+                                <MudTh>Closing</MudTh>
+                                <MudTh>Action</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Name</MudTd>
+                                <MudTd>@context.Category</MudTd>
+                                <MudTd>
+                                    <MudText Typo="Typo.body2" Color="Color.Primary">
+                                        @GetOpeningAddedStock(context)
+                                    </MudText>
+                                </MudTd>
+                                <MudTd>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                                </MudTd>
+                                <MudTd>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                                </MudTd>
+                                <MudTd>
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                                        <MudMenuItem OnClick="@(() => EditProduct(context))">Update</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => AddStockProduct(context))">Add Stock</MudMenuItem>
+                                    </MudMenu>
+                                </MudTd>
+                            </RowTemplate>
+                            <PagerContent><MudTablePager /></PagerContent>
+                        </MudTable>
+                    }
+                    else
+                    {
+                                                 <div class="text-center pa-4">
+                             <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" />
+                             <MudText Typo="Typo.h6" Class="mt-2">No products modified by Opening role</MudText>
+                             <MudText Typo="Typo.body2" Color="Color.Secondary">This view only shows products that have been modified by users with Opening role</MudText>
+                         </div>
+                    }
+                </MudCardContent>
+            </MudCard>
+        }
     </div>
 
     <!-- Create Reminder Modal -->
@@ -185,6 +258,19 @@
     private string[] errors = Array.Empty<string>();
 
     private NewUser _newUser = new();
+
+    // Table variables
+    private string _searchString = "";
+    private bool _isLoading = true;
+    private List<Product> _products = [];
+    private bool _isFilterModalOpen;
+    private string _sortOrder = "name_asc";
+    private string _selectedCategory = "";
+    
+    // Separate filter state for the modal
+    private string _tempSearchString = "";
+    private string _tempSortOrder = "name_asc";
+    private string _tempSelectedCategory = "";
 
     private void OpenCreateUserModal()
     {
@@ -358,5 +444,171 @@
     {
         public string Title { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+    }
+
+    // Table methods
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            _isLoading = true;
+            StateHasChanged();
+            
+            // Test Firebase connection first
+            var connectionTest = await FirebaseService.TestConnectionAsync();
+            if (!connectionTest)
+            {
+                ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error);
+                return;
+            }
+            
+            _products = await FirebaseService.GetProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private List<Product> FilteredProducts
+    {
+        get
+        {
+            // Only show products that have been modified by opening role users
+            var openingModifiedProducts = _products.Where(product => 
+                !string.IsNullOrEmpty(product.LastModifiedBy) && 
+                product.LastModifiedBy.ToLower().Contains("opening") &&
+                (string.IsNullOrEmpty(_searchString) || 
+                 product.Name.ToLower().Contains(_searchString.ToLower()) ||
+                 product.Category.ToLower().Contains(_searchString.ToLower())) &&
+                (string.IsNullOrEmpty(_selectedCategory) || product.Category == _selectedCategory));
+
+            return _sortOrder switch
+            {
+                "name_asc" => openingModifiedProducts.OrderBy(p => p.Name).ToList(),
+                "name_desc" => openingModifiedProducts.OrderByDescending(p => p.Name).ToList(),
+                _ => openingModifiedProducts.OrderBy(p => p.Name).ToList()
+            };
+        }
+    }
+
+    private void EditProduct(Product product)
+    {
+        // Placeholder for edit functionality
+        ShowCenteredNotification($"Edit product: {product.Name}", Severity.Info);
+    }
+
+    private void AddStockProduct(Product product)
+    {
+        // Placeholder for add stock functionality
+        ShowCenteredNotification($"Add stock to: {product.Name}", Severity.Info);
+    }
+
+    private void OpenFilterModal()
+    {
+        // Initialize temp values with current filter values
+        _tempSearchString = _searchString;
+        _tempSortOrder = _sortOrder;
+        _tempSelectedCategory = _selectedCategory;
+        _isFilterModalOpen = true;
+        StateHasChanged();
+    }
+
+    private void CloseFilterModal()
+    {
+        _isFilterModalOpen = false;
+        StateHasChanged();
+    }
+
+    private void ClearAllFilters()
+    {
+        // Clear all actual filter values immediately
+        _searchString = "";
+        _selectedCategory = "";
+        _sortOrder = "name_asc";
+        
+        ShowCenteredNotification("All filters cleared", Severity.Info);
+        StateHasChanged();
+    }
+
+    private void ApplyFilters()
+    {
+        // Apply the temporary filter values to the actual filter values
+        _searchString = _tempSearchString;
+        _sortOrder = _tempSortOrder;
+        _selectedCategory = _tempSelectedCategory;
+        CloseFilterModal();
+        ShowCenteredNotification("Filters applied successfully", Severity.Success);
+    }
+
+    private string GetTimeAgo(DateTime timestamp)
+    {
+        var philippineTime = DateTime.UtcNow.AddHours(8);
+        var timeSpan = philippineTime - timestamp;
+        
+        if (timeSpan.TotalDays >= 365)
+        {
+            var years = (int)(timeSpan.TotalDays / 365);
+            return $"{years} year{(years == 1 ? "" : "s")} ago";
+        }
+        else if (timeSpan.TotalDays >= 30)
+        {
+            var months = (int)(timeSpan.TotalDays / 30);
+            return $"{months} month{(months == 1 ? "" : "s")} ago";
+        }
+        else if (timeSpan.TotalDays >= 1)
+        {
+            var days = (int)timeSpan.TotalDays;
+            return $"{days} day{(days == 1 ? "" : "s")} ago";
+        }
+        else if (timeSpan.TotalHours >= 1)
+        {
+            var hours = (int)timeSpan.TotalHours;
+            return $"{hours} hour{(hours == 1 ? "" : "s")} ago";
+        }
+        else if (timeSpan.TotalMinutes >= 1)
+        {
+            var minutes = (int)timeSpan.TotalMinutes;
+            return $"{minutes} minute{(minutes == 1 ? "" : "s")} ago";
+        }
+        else
+        {
+            return "Just now";
+        }
+    }
+
+    private void ShowCenteredNotification(string message, Severity severity)
+    {
+        Snackbar.Add(message, severity, config =>
+        {
+            config.RequireInteraction = false;
+            config.ShowCloseIcon = true;
+            config.VisibleStateDuration = 3000;
+        });
+    }
+
+    private string GetOpeningAddedStock(Product product)
+    {
+        // This method should calculate the total stock added by Opening role users
+        // For now, we'll return a placeholder. This should be implemented based on your data structure
+        // You might need to track stock additions in a separate collection or add fields to the Product model
+        
+        // Placeholder implementation - replace with actual logic
+        if (product.OpeningAddedStock > 0)
+        {
+            return $"{product.OpeningAddedStock} units";
+        }
+        
+        return "0 units";
     }
 }
