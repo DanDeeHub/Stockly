@@ -59,7 +59,7 @@
             <MudCard Elevation="0">
                 <MudCardContent Class="pa-4 text-center">
                     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                                         <MudText Class="mt-2">Loading today's opening/admin-modified products...</MudText>
+                                         <MudText Class="mt-2">Loading today's Opening Inventory changes...</MudText>
                 </MudCardContent>
             </MudCard>
         }
@@ -101,26 +101,26 @@
                     {
                                                  <div class="text-center pa-4">
                              <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" />
-                                                           <MudText Typo="Typo.h6" Class="mt-2">
-                                  @if (_startDate.HasValue || _endDate.HasValue)
-                                  {
-                                      <span>No products modified in selected date range by Opening role or Admin</span>
-                                  }
-                                  else
-                                  {
-                                      <span>No products modified today by Opening role or Admin</span>
-                                  }
-                              </MudText>
-                              <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                  @if (_startDate.HasValue || _endDate.HasValue)
-                                  {
-                                      <span>This view shows products that have been modified by users with Opening role or Admin in the selected date range</span>
-                                  }
-                                  else
-                                  {
-                                      <span>This view only shows products that have been modified by users with Opening role or Admin today</span>
-                                  }
-                              </MudText>
+                                                                                          <MudText Typo="Typo.h6" Class="mt-2">
+                                   @if (_startDate.HasValue || _endDate.HasValue)
+                                   {
+                                       <span>No Opening Inventory changes in selected date range</span>
+                                   }
+                                   else
+                                   {
+                                       <span>No Opening Inventory changes today</span>
+                                   }
+                               </MudText>
+                               <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                   @if (_startDate.HasValue || _endDate.HasValue)
+                                   {
+                                       <span>This view shows products that have been modified through Opening Inventory in the selected date range</span>
+                                   }
+                                   else
+                                   {
+                                       <span>This view only shows products that have been modified through Opening Inventory today</span>
+                                   }
+                               </MudText>
                          </div>
                     }
                 </MudCardContent>
@@ -671,10 +671,10 @@
             // Get today's date in Philippine timezone
             var today = DateTime.UtcNow.AddHours(8).Date;
             
-            // Start with all products modified by opening role users or admin users
+            // Start with all products that have been modified through Opening Inventory (stock updates)
+            // Only show products that have OpeningAddedStock > 0, indicating they were modified through Opening Inventory
             var openingModifiedProducts = _products.Where(product => 
-                !string.IsNullOrEmpty(product.LastModifiedBy) && 
-                (product.LastModifiedBy.ToLower().Contains("opening") || product.LastModifiedBy.ToLower().Contains("admin")) &&
+                product.OpeningAddedStock > 0 && // Only products that have been modified through Opening Inventory
                 product.LastUpdated.HasValue &&
                 (string.IsNullOrEmpty(_searchString) || 
                  product.Name.ToLower().Contains(_searchString.ToLower()) ||
