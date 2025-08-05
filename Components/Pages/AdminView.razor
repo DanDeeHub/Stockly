@@ -11,30 +11,9 @@
     <div class="pa-2 pa-sm-4">
         <!-- Header with Buttons -->
         <div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-3 mb-sm-6">
-            <div>
-                <MudText Typo="Typo.h4" Class="mb-2 mb-sm-0">Admin Dashboard</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    @if (_startDate.HasValue || _endDate.HasValue)
-                    {
-                        @if (_startDate.HasValue && _endDate.HasValue)
-                        {
-                            <span>Showing changes from @_startDate.Value.ToString("MM/dd/yyyy") to @_endDate.Value.ToString("MM/dd/yyyy")</span>
-                        }
-                        else if (_startDate.HasValue)
-                        {
-                            <span>Showing changes from @_startDate.Value.ToString("MM/dd/yyyy") onwards</span>
-                        }
-                        else if (_endDate.HasValue)
-                        {
-                            <span>Showing changes until @_endDate.Value.ToString("MM/dd/yyyy")</span>
-                        }
-                    }
-                    else
-                    {
-                        <span>Showing today's changes only</span>
-                    }
-                </MudText>
-            </div>
+                         <div>
+                 <MudText Typo="Typo.h4" Class="mb-2 mb-sm-0">Admin Dashboard</MudText>
+             </div>
             
                     <div class="d-flex gap-1 gap-sm-2">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" Elevation="0" Style="height: 40px; width: 180px; white-space: nowrap;" OnClick="OpenCreateUserModal">Create New User</MudButton>
@@ -366,6 +345,11 @@
     private string _sortOrder = "name_asc";
     private string _selectedCategory = "";
     
+    // Caching variables
+    private static List<Product> _cachedProducts = [];
+    private static DateTime _lastCacheUpdate = DateTime.MinValue;
+    private static readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5); // Cache for 5 minutes
+    
     // Date range filter variables
     private bool _isDateRangeModalOpen = false;
     private DateTime? _startDate = null;
@@ -633,34 +617,56 @@
     // Table methods
     protected override async Task OnInitializedAsync()
     {
-        await LoadProducts();
+        // Use cached data if available and not expired
+        if (_cachedProducts.Any() && DateTime.Now - _lastCacheUpdate < _cacheExpiration)
+        {
+            _products = _cachedProducts;
+            _isLoading = false;
+            StateHasChanged(); // Show cached data immediately
+            
+            // Load fresh data in background without showing loading state
+            _ = Task.Run(async () => await LoadProducts());
+        }
+        else
+        {
+            // No valid cache, load data normally
+            await LoadProducts();
+        }
     }
 
     private async Task LoadProducts()
     {
         try
         {
-            _isLoading = true;
-            StateHasChanged();
+            // Only show loading state if we don't have cached data
+            if (!_cachedProducts.Any() || DateTime.Now - _lastCacheUpdate >= _cacheExpiration)
+            {
+                await InvokeAsync(() => _isLoading = true);
+            }
             
             // Test Firebase connection first
             var connectionTest = await FirebaseService.TestConnectionAsync();
             if (!connectionTest)
             {
-                ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error);
+                await InvokeAsync(() => ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error));
                 return;
             }
             
             _products = await FirebaseService.GetProductsAsync();
+            _cachedProducts = _products; // Cache the loaded products
+            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
         }
         catch (Exception ex)
         {
-            ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error);
+            await InvokeAsync(() => ShowCenteredNotification($"Error loading products: {ex.Message}", Severity.Error));
         }
         finally
         {
-            _isLoading = false;
-            StateHasChanged();
+            await InvokeAsync(() => 
+            {
+                _isLoading = false;
+                StateHasChanged();
+            });
         }
     }
 
@@ -747,6 +753,12 @@
     {
         // Placeholder for add stock functionality
         ShowCenteredNotification($"Add stock to: {product.Name}", Severity.Info);
+    }
+
+    private void ClearCache()
+    {
+        _cachedProducts.Clear();
+        _lastCacheUpdate = DateTime.MinValue;
     }
 
     private void ClearAllFilters()
