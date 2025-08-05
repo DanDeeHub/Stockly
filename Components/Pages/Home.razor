@@ -423,12 +423,7 @@ else
     private List<Product> _lowStockProducts = new();
     private List<Product> _outOfStockProducts = new();
     
-    // Caching variables
-    private static List<Product> _cachedProducts = [];
-    private static List<Activity> _cachedActivities = [];
-    private static List<Reminder> _cachedReminders = [];
-    private static DateTime _lastCacheUpdate = DateTime.MinValue;
-    private static readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5); // Cache for 5 minutes
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -441,30 +436,9 @@ else
             // Subscribe to reminder update notifications
             UserState.OnReminderUpdated += ClearReminderCache;
             
-            // Use cached data if available and not expired
-            if (_cachedProducts.Any() && _cachedActivities.Any() && _cachedReminders.Any() && 
-                DateTime.Now - _lastCacheUpdate < _cacheExpiration)
-            {
-                _products = _cachedProducts;
-                _recentActivities = _cachedActivities;
-                _activeReminders = _cachedReminders;
-                StateHasChanged(); // Show cached data immediately
-                
-                // Load fresh data in background without blocking
-                _ = Task.Run(async () => 
-                {
-                    await LoadProducts();
-                    await LoadRecentActivities();
-                    await LoadReminders();
-                });
-            }
-            else
-            {
-                // No valid cache, load data normally
-                await LoadProducts();
-                await LoadRecentActivities();
-                await LoadReminders();
-            }
+            await LoadProducts();
+            await LoadRecentActivities();
+            await LoadReminders();
         }
     }
 
@@ -479,9 +453,9 @@ else
     {
         try
         {
-            // Clear cache to force fresh data load
-            ClearCache();
-            await LoadProducts();
+                            // Refresh data
+                ClearCache();
+                await LoadProducts();
             await LoadRecentActivities();
             await LoadReminders();
             ShowCenteredNotification("Dashboard data refreshed successfully", Severity.Success);
@@ -498,17 +472,12 @@ else
 
     private void ClearCache()
     {
-        _cachedProducts.Clear();
-        _cachedActivities.Clear();
-        _cachedReminders.Clear();
-        _lastCacheUpdate = DateTime.MinValue;
+        // No caching implemented
     }
 
     // Method to clear reminder cache and reload reminders
     private void ClearReminderCache()
     {
-        _cachedReminders.Clear();
-        _lastCacheUpdate = DateTime.MinValue;
         // Force reload of reminders immediately
         _ = Task.Run(async () => 
         {
@@ -530,8 +499,6 @@ else
             }
             
             _products = await FirebaseService.GetProductsAsync();
-            _cachedProducts = _products; // Cache the loaded products
-            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
             await InvokeAsync(StateHasChanged); // Update UI with fresh data on UI thread
         }
         catch (Exception ex)
@@ -545,8 +512,6 @@ else
         try
         {
             _recentActivities = await FirebaseService.GetRecentActivitiesAsync(24);
-            _cachedActivities = _recentActivities; // Cache the loaded activities
-            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
             await InvokeAsync(StateHasChanged); // Update UI with fresh data on UI thread
         }
         catch (Exception ex)
@@ -792,8 +757,6 @@ else
         try
         {
             _activeReminders = await FirebaseService.GetActiveRemindersAsync();
-            _cachedReminders = _activeReminders; // Cache the loaded reminders
-            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
             await InvokeAsync(StateHasChanged); // Update UI with fresh data on UI thread
         }
         catch (Exception ex)

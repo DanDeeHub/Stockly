@@ -75,7 +75,6 @@
                                 <MudTd>
                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
                                         <MudMenuItem OnClick="@(() => EditProduct(context))">Update</MudMenuItem>
-                                        <MudMenuItem OnClick="@(() => AddStockProduct(context))">Add Stock</MudMenuItem>
                                     </MudMenu>
                                 </MudTd>
                             </RowTemplate>
@@ -176,17 +175,23 @@
                         <MudItem xs="12">
                             <MudTextField @bind-Value="_editingProduct.Category" Label="Category" Variant="Variant.Outlined" ReadOnly="true" />
                         </MudItem>
-                        <MudItem xs="12">
-                            <MudNumericField @bind-Value="_editingProduct.Stock" Label="@((UserState.Role == "closing" || UserState.Role == "admin") ? "Closing Inventory Quantity" : "Update Quantity")" Variant="Variant.Outlined" Required="true" />
-                        </MudItem>
                         @if (UserState.Role == "closing" || UserState.Role == "admin")
                         {
                             <MudItem xs="12">
+                                <MudNumericField @bind-Value="_editingProduct.Stock" Label="Remaining Quantity" Variant="Variant.Outlined" Required="true" />
+                            </MudItem>
+                            <MudItem xs="12">
                                 <MudAlert Severity="Severity.Info" Class="mt-2">
                                     <MudText Typo="Typo.body2">
-                                        Note: Closing users cannot view total stock quantities. The quantity shown is for update purposes only.
+                                        Note: Enter the remaining quantity after closing inventory count.
                                     </MudText>
                                 </MudAlert>
+                            </MudItem>
+                        }
+                        else
+                        {
+                            <MudItem xs="12">
+                                <MudNumericField @bind-Value="_editingProduct.Stock" Label="Update Quantity" Variant="Variant.Outlined" Required="true" />
                             </MudItem>
                         }
                     </MudGrid>
@@ -209,47 +214,7 @@
         </MudOverlay>
     }
 
-    <!-- Add Stock Modal -->
-    @if (_isAddStockDialogOpen)
-    {
-        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
-            <MudCard Style="width: 95%; max-width: 400px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
-                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
-                    <MudText Typo="Typo.h6">Add Stock</MudText>
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
-                                  OnClick="CloseAddStockModal" 
-                                  Size="Size.Small" 
-                                  Color="Color.Inherit"
-                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
-                </MudCardHeader>
-                
-                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
-                    <MudGrid>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="_addingStockProduct.Name" Label="Product Name" Variant="Variant.Outlined" ReadOnly="true" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudNumericField @bind-Value="_addStockQuantity" Label="Add Stock Quantity" Variant="Variant.Outlined" Required="true" />
-                        </MudItem>
-                    </MudGrid>
-                </MudCardContent>
-                
-                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
-                    <MudButton OnClick="CloseAddStockModal" Variant="Variant.Text" Class="mr-2" Disabled="@_isSaving">Cancel</MudButton>
-                    <MudButton OnClick="SaveAddStock" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
-                        @if (_isSaving)
-                        {
-                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" />
-                        }
-                        else
-                        {
-                            <span>Add Stock</span>
-                        }
-                    </MudButton>
-                </MudCardActions>
-            </MudCard>
-        </MudOverlay>
-    }
+
 
     <!-- Filter Modal -->
     @if (_isFilterModalOpen)
@@ -357,9 +322,6 @@
     private string _selectedCategory = "";
     private bool _isEditProductDialogOpen;
     private Product _editingProduct;
-    private bool _isAddStockDialogOpen;
-    private Product _addingStockProduct;
-    private int _addStockQuantity = 0;
     
     // Separate filter state for the modal
     private string _tempSearchString = "";
@@ -370,43 +332,20 @@
     private bool _isDeleteConfirmationOpen = false;
     private TaskCompletionSource<bool> _deleteConfirmationTcs = null;
     
-    // Caching variables
-    private static List<Product> _cachedProducts = [];
-    private static DateTime _lastCacheUpdate = DateTime.MinValue;
-    private static readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5); // Cache for 5 minutes
 
-    public ClosingInventory() {
-        _isAddProductDialogOpen = false;
-    }
+
+
 
     override protected async Task OnInitializedAsync()
     {
-        // Use cached data if available and not expired
-        if (_cachedProducts.Any() && DateTime.Now - _lastCacheUpdate < _cacheExpiration)
-        {
-            _products = _cachedProducts;
-            _isLoading = false;
-            StateHasChanged(); // Show cached data immediately
-            
-            // Load fresh data in background without showing loading state
-            _ = Task.Run(async () => await LoadProducts());
-        }
-        else
-        {
-            // No valid cache, load data normally
-            await LoadProducts();
-        }
+        await LoadProducts();
     }
 
     private async Task LoadProducts()
     {
         try
         {
-            // Only show loading state if we don't have cached data
-            if (!_cachedProducts.Any() || DateTime.Now - _lastCacheUpdate >= _cacheExpiration)
-            {
-                await InvokeAsync(() => _isLoading = true);
-            }
+            await InvokeAsync(() => _isLoading = true);
             
             // Test Firebase connection first
             var connectionTest = await FirebaseService.TestConnectionAsync();
@@ -417,9 +356,6 @@
             }
             
             _products = await FirebaseService.GetProductsAsync();
-             
-            _cachedProducts = _products; // Cache the loaded products
-            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
         }
         catch (Exception ex)
         {
@@ -437,8 +373,7 @@
 
     private void ClearCache()
     {
-        _cachedProducts.Clear();
-        _lastCacheUpdate = DateTime.MinValue;
+        // No caching implemented
     }
 
     private List<Product> FilteredProducts
@@ -462,7 +397,6 @@
 
     private void ViewProduct(Product product)
     {
-        // TODO: Implement view product functionality
         ShowCenteredNotification($"Viewing product: {product.Name}", Severity.Info);
     }
 
@@ -479,28 +413,19 @@
             Price = product.Price,
             Status = product.Status,
             StatusColor = product.StatusColor,
-            CreatedAt = product.CreatedAt
+            CreatedAt = product.CreatedAt,
+            OpeningAddedStock = product.OpeningAddedStock,
+            TodayAddedStock = product.TodayAddedStock,
+            LastStockUpdateDate = product.LastStockUpdateDate,
+            OpeningInventoryQuantity = product.OpeningInventoryQuantity,
+            OpeningInventorySetBy = product.OpeningInventorySetBy,
+            ClosingInventoryQuantity = product.ClosingInventoryQuantity,
+            ClosingInventorySetBy = product.ClosingInventorySetBy
         };
         _isEditProductDialogOpen = true;
     }
 
-    private void AddStockProduct(Product product)
-    {
-        _addingStockProduct = new Product
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Category = product.Category,
-            Stock = product.Stock,
-            LowStockThreshold = product.LowStockThreshold,
-            Price = product.Price,
-            Status = product.Status,
-            StatusColor = product.StatusColor,
-            CreatedAt = product.CreatedAt
-        };
-        _addStockQuantity = 0;
-        _isAddStockDialogOpen = true;
-    }
+
 
     private async Task DeleteProduct(Product product)
     {
@@ -591,7 +516,7 @@
             var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct);
             if (success)
             {
-                // Clear cache to force fresh data load
+                // Refresh data
                 ClearCache();
                 await LoadProducts();
                 _isAddProductDialogOpen = false;
@@ -619,83 +544,7 @@
         StateHasChanged();
     }
 
-    private void CloseAddStockModal()
-    {
-        _isAddStockDialogOpen = false;
-        StateHasChanged();
-    }
 
-    private async Task SaveAddStock()
-    {
-        if (_addStockQuantity <= 0)
-        {
-            ShowCenteredNotification("Please enter a valid quantity to add", Severity.Warning);
-            return;
-        }
-
-        try
-        {
-            _isSaving = true;
-            StateHasChanged();
-
-            // Get the original product to find the current stock
-            var originalProduct = _products.FirstOrDefault(p => p.Id == _addingStockProduct.Id);
-            if (originalProduct != null)
-            {
-                // Add the stock quantity to the existing stock
-                var updatedStock = originalProduct.Stock + _addStockQuantity;
-                
-                // Create a new product object with the updated stock
-                var updatedProduct = new Product
-                {
-                    Id = originalProduct.Id,
-                    Name = originalProduct.Name,
-                    Category = originalProduct.Category,
-                    Stock = updatedStock,
-                    LowStockThreshold = originalProduct.LowStockThreshold,
-                    Price = originalProduct.Price,
-                    Status = GetStatusText(updatedStock, originalProduct.LowStockThreshold),
-                    StatusColor = GetStatusColor(updatedStock, originalProduct.LowStockThreshold),
-                    CreatedAt = originalProduct.CreatedAt,
-                    LastUpdated = DateTime.UtcNow
-                };
-
-                var success = await FirebaseService.UpdateProductAsync(updatedProduct, UserState.CurrentUser?.Username ?? "");
-                if (success)
-                {
-                    // Check for low stock conditions and create activities
-                    await FirebaseService.CheckLowStockAndCreateActivityAsync(updatedProduct);
-                    
-                    // Find and update the original product in the list
-                    var index = _products.FindIndex(p => p.Id == updatedProduct.Id);
-                    if (index != -1)
-                    {
-                        _products[index] = updatedProduct;
-                    }
-                    
-                    _isAddStockDialogOpen = false;
-                    ShowCenteredNotification($"Added {_addStockQuantity} stock to '{_addingStockProduct.Name}' successfully", Severity.Success);
-                    
-                    // Clear cache to force fresh data load
-                    ClearCache();
-                    await LoadProducts();
-                }
-                else
-                {
-                    ShowCenteredNotification($"Failed to add stock to '{_addingStockProduct.Name}'", Severity.Error);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowCenteredNotification($"Error adding stock: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isSaving = false;
-            StateHasChanged();
-        }
-    }
 
     private async Task UpdateProduct()
     {
@@ -710,25 +559,38 @@
             _isSaving = true;
             StateHasChanged();
 
-            // Check if product name already exists (excluding the current product being edited)
-            var productExists = await FirebaseService.CheckProductNameExistsAsync(_editingProduct.Name, _editingProduct.Id);
-            if (productExists)
+            // Get the original product to find the current stock and opening inventory quantity
+            var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
+            if (originalProduct == null)
             {
-                ShowCenteredNotification($"A product with the name '{_editingProduct.Name}' already exists. Please choose a different name.", Severity.Warning);
+                ShowCenteredNotification("Product not found", Severity.Error);
                 return;
             }
 
-            // For closing users and admins, the stock field represents the ADDITIONAL closing inventory amount
-            // We need to add this to the existing stock
+            // For closing users and admins, validate that opening inventory has been set
+            if ((UserState.Role == "closing" || UserState.Role == "admin") && originalProduct.OpeningInventoryQuantity <= 0)
+            {
+                ShowCenteredNotification("Opening inventory quantity has not been set for this product. Please set opening inventory first.", Severity.Warning);
+                return;
+            }
+
+            // For closing users and admins, implement the new closing inventory logic
             if (UserState.Role == "closing" || UserState.Role == "admin")
             {
-                // Get the original product to find the current stock
-                var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
-                if (originalProduct != null)
-                {
-                    // Add the closing inventory amount to the existing stock
-                    _editingProduct.Stock = originalProduct.Stock + _editingProduct.Stock;
-                }
+                // The _editingProduct.Stock field contains the remaining quantity set by closing
+                var remainingQuantity = _editingProduct.Stock;
+                
+                // Calculate the final stock: Original Stock - (Opening Quantity - Remaining Quantity)
+                var finalStock = originalProduct.Stock - (originalProduct.OpeningInventoryQuantity - remainingQuantity);
+                
+                // Store the closing inventory data
+                _editingProduct.ClosingInventoryQuantity = remainingQuantity;
+                _editingProduct.ClosingInventorySetBy = UserState.CurrentUser?.Username ?? "";
+                
+                // Update the total stock with the calculated final stock
+                _editingProduct.Stock = finalStock;
+                
+
             }
 
             // Update the regular status for the Products page
@@ -738,30 +600,25 @@
             // Set the last updated timestamp
             _editingProduct.LastUpdated = DateTime.UtcNow;
 
-            var success = await FirebaseService.UpdateProductAsync(_editingProduct);
+            var success = await FirebaseService.UpdateProductAsync(_editingProduct, UserState.CurrentUser?.Username ?? "");
             if (success)
             {
                 // Check for low stock conditions and create activities
                 await FirebaseService.CheckLowStockAndCreateActivityAsync(_editingProduct);
                 
                 // Find and update the original product in the list
-                var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
-                if (originalProduct != null)
+                var index = _products.FindIndex(p => p.Id == _editingProduct.Id);
+                if (index != -1)
                 {
-                    originalProduct.Name = _editingProduct.Name;
-                    originalProduct.Category = _editingProduct.Category;
-                    originalProduct.Stock = _editingProduct.Stock;
-                    originalProduct.LowStockThreshold = _editingProduct.LowStockThreshold;
-                    originalProduct.Price = _editingProduct.Price;
-                    originalProduct.Status = _editingProduct.Status;
-                    originalProduct.StatusColor = _editingProduct.StatusColor;
-                    originalProduct.LastUpdated = _editingProduct.LastUpdated;
+                    // Preserve TodayAddedStock from the original product - closing inventory should not affect Today Added
+                    _editingProduct.TodayAddedStock = _products[index].TodayAddedStock;
+                    _products[index] = _editingProduct;
                 }
                 
                 _isEditProductDialogOpen = false;
                 ShowCenteredNotification($"Product '{_editingProduct.Name}' {((UserState.Role == "closing" || UserState.Role == "admin") ? "closing inventory set" : "updated")} successfully", Severity.Success);
                 
-                // Clear cache to force fresh data load
+                // Refresh data
                 ClearCache();
                 await LoadProducts();
             }

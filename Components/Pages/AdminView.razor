@@ -66,10 +66,28 @@
                                     </MudText>
                                 </MudTd>
                                 <MudTd>
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        @if (context.OpeningInventoryQuantity > 0)
+                                        {
+                                            <span>@context.OpeningInventoryQuantity | @context.OpeningInventorySetBy</span>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </MudText>
                                 </MudTd>
                                 <MudTd>
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        @if (!string.IsNullOrEmpty(context.ClosingInventorySetBy))
+                                        {
+                                            <span>@context.ClosingInventoryQuantity | @context.ClosingInventorySetBy</span>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </MudText>
                                 </MudTd>
 
                             </RowTemplate>
@@ -345,10 +363,7 @@
     private string _sortOrder = "name_asc";
     private string _selectedCategory = "";
     
-    // Caching variables
-    private static List<Product> _cachedProducts = [];
-    private static DateTime _lastCacheUpdate = DateTime.MinValue;
-    private static readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5); // Cache for 5 minutes
+
     
     // Date range filter variables
     private bool _isDateRangeModalOpen = false;
@@ -448,10 +463,7 @@
         var filteredCount = FilteredProducts.Count;
         ShowCenteredNotification($"Filter Applied, showing {filteredCount} products", Severity.Success);
         
-        // Debug: Show the actual filter dates
-        var startDateText = _startDate?.ToString("yyyy-MM-dd") ?? "None";
-        var endDateText = _endDate?.ToString("yyyy-MM-dd") ?? "None";
-        Console.WriteLine($"DEBUG: Filter applied - StartDate: {startDateText}, EndDate: {endDateText}");
+
     }
 
     private async Task CreateUser()
@@ -617,32 +629,14 @@
     // Table methods
     protected override async Task OnInitializedAsync()
     {
-        // Use cached data if available and not expired
-        if (_cachedProducts.Any() && DateTime.Now - _lastCacheUpdate < _cacheExpiration)
-        {
-            _products = _cachedProducts;
-            _isLoading = false;
-            StateHasChanged(); // Show cached data immediately
-            
-            // Load fresh data in background without showing loading state
-            _ = Task.Run(async () => await LoadProducts());
-        }
-        else
-        {
-            // No valid cache, load data normally
-            await LoadProducts();
-        }
+        await LoadProducts();
     }
 
     private async Task LoadProducts()
     {
         try
         {
-            // Only show loading state if we don't have cached data
-            if (!_cachedProducts.Any() || DateTime.Now - _lastCacheUpdate >= _cacheExpiration)
-            {
-                await InvokeAsync(() => _isLoading = true);
-            }
+            await InvokeAsync(() => _isLoading = true);
             
             // Test Firebase connection first
             var connectionTest = await FirebaseService.TestConnectionAsync();
@@ -653,8 +647,6 @@
             }
             
             _products = await FirebaseService.GetProductsAsync();
-            _cachedProducts = _products; // Cache the loaded products
-            _lastCacheUpdate = DateTime.Now; // Update cache timestamp
         }
         catch (Exception ex)
         {
@@ -678,9 +670,9 @@
             var today = DateTime.UtcNow.AddHours(8).Date;
             
             // Start with all products that have been modified through Opening Inventory (stock updates)
-            // Only show products that have OpeningAddedStock > 0, indicating they were modified through Opening Inventory
+            // Show products that have OpeningAddedStock > 0 (Add Stock) OR OpeningInventoryQuantity > 0 (Set Inventory)
             var openingModifiedProducts = _products.Where(product => 
-                product.OpeningAddedStock > 0 && // Only products that have been modified through Opening Inventory
+                (product.OpeningAddedStock > 0 || product.OpeningInventoryQuantity > 0) && // Products modified through Opening Inventory
                 product.LastUpdated.HasValue &&
                 (string.IsNullOrEmpty(_searchString) || 
                  product.Name.ToLower().Contains(_searchString.ToLower()) ||
@@ -745,20 +737,17 @@
 
     private void EditProduct(Product product)
     {
-        // Placeholder for edit functionality
         ShowCenteredNotification($"Edit product: {product.Name}", Severity.Info);
     }
 
     private void AddStockProduct(Product product)
     {
-        // Placeholder for add stock functionality
         ShowCenteredNotification($"Add stock to: {product.Name}", Severity.Info);
     }
 
     private void ClearCache()
     {
-        _cachedProducts.Clear();
-        _lastCacheUpdate = DateTime.MinValue;
+        // No caching implemented
     }
 
     private void ClearAllFilters()
@@ -822,7 +811,7 @@
 
     private string GetOpeningAddedStock(Product product)
     {
-        // Show today's added stock instead of cumulative total
+        // Show today added stock (this is what gets updated when adding stock through Opening Inventory)
         if (product.TodayAddedStock > 0)
         {
             return $"{product.TodayAddedStock} units";

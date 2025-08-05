@@ -144,8 +144,14 @@ namespace Stockly.Services
                         LastModifiedBy = data.ContainsKey("lastModifiedBy") ? data["lastModifiedBy"].ToString() : null,
                         OpeningAddedStock = data.ContainsKey("openingAddedStock") ? Convert.ToInt32(data["openingAddedStock"]) : 0,
                         TodayAddedStock = data.ContainsKey("todayAddedStock") ? Convert.ToInt32(data["todayAddedStock"]) : 0,
-                        LastStockUpdateDate = data.ContainsKey("lastStockUpdateDate") ? ((Timestamp)data["lastStockUpdateDate"]).ToDateTime() : null
+                        LastStockUpdateDate = data.ContainsKey("lastStockUpdateDate") ? ((Timestamp)data["lastStockUpdateDate"]).ToDateTime() : null,
+                        OpeningInventoryQuantity = data.ContainsKey("openingInventoryQuantity") ? Convert.ToInt32(data["openingInventoryQuantity"]) : 0,
+                        OpeningInventorySetBy = data.ContainsKey("openingInventorySetBy") ? data["openingInventorySetBy"].ToString() : "",
+                        ClosingInventoryQuantity = data.ContainsKey("closingInventoryQuantity") ? Convert.ToInt32(data["closingInventoryQuantity"]) : 0,
+                        ClosingInventorySetBy = data.ContainsKey("closingInventorySetBy") ? data["closingInventorySetBy"].ToString() : ""
                     };
+                    
+
                     
                     // Set status color based on status
                     product.StatusColor = product.Status switch
@@ -293,6 +299,9 @@ namespace Stockly.Services
             try
             {
                 DocumentReference productRef = _db.Collection("products").Document(product.Id);
+                
+
+                
                 var productData = new Dictionary<string, object>
                 {
                     { "name", product.Name },
@@ -302,16 +311,24 @@ namespace Stockly.Services
                     { "price", Convert.ToDouble(product.Price) }, // Convert decimal to double for Firestore
                     { "lowStockThreshold", product.LowStockThreshold },
                     { "openingAddedStock", product.OpeningAddedStock },
+                    { "todayAddedStock", product.TodayAddedStock },
+                    { "lastStockUpdateDate", product.LastStockUpdateDate.HasValue ? Timestamp.FromDateTime(product.LastStockUpdateDate.Value) : Timestamp.FromDateTime(GetPhilippineTime()) },
+                    { "openingInventoryQuantity", product.OpeningInventoryQuantity },
+                    { "openingInventorySetBy", product.OpeningInventorySetBy },
+                    { "closingInventoryQuantity", product.ClosingInventoryQuantity },
+                    { "closingInventorySetBy", product.ClosingInventorySetBy },
                     { "updatedAt", Timestamp.FromDateTime(GetPhilippineTime()) },
                     { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) },
                     { "lastModifiedBy", modifiedBy }
                 };
 
                 await productRef.UpdateAsync(productData);
+                Console.WriteLine($"UpdateProductAsync: Successfully updated product {product.Id}");
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"UpdateProductAsync Error: {ex.Message}");
                 return false;
             }
         }
@@ -786,6 +803,10 @@ namespace Stockly.Services
         public int OpeningAddedStock { get; set; } = 0; // Cumulative stock added by Opening role users
         public int TodayAddedStock { get; set; } = 0; // Stock added today by Opening role users
         public DateTime? LastStockUpdateDate { get; set; } // Date of last stock update to track daily additions
+        public int OpeningInventoryQuantity { get; set; } = 0; // Quantity set by Opening Inventory
+        public string OpeningInventorySetBy { get; set; } = ""; // Username who set the Opening Inventory quantity
+        public int ClosingInventoryQuantity { get; set; } = 0; // Quantity set by Closing Inventory
+        public string ClosingInventorySetBy { get; set; } = ""; // Username who set the Closing Inventory quantity
     }
 
     public class Activity

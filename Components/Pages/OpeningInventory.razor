@@ -177,7 +177,7 @@
                              <MudTextField @bind-Value="_editingProduct.Category" Label="Category" Variant="Variant.Outlined" ReadOnly="true" />
                          </MudItem>
                          <MudItem xs="12">
-                             <MudNumericField @bind-Value="_editingProduct.Stock" Label="@((UserState.Role == "opening" || UserState.Role == "admin") ? "Opening Inventory Quantity" : "Update Quantity")" Variant="Variant.Outlined" Required="true" />
+                             <MudNumericField @bind-Value="_editingProduct.Stock" Label="@((UserState.Role == "opening" || UserState.Role == "admin") ? "Opening Quantity" : "Update Quantity")" Variant="Variant.Outlined" Required="true" />
                          </MudItem>
                                                    @if (UserState.Role == "opening" || UserState.Role == "admin")
                           {
@@ -374,10 +374,7 @@
     private bool _isDeleteConfirmationOpen = false;
     private TaskCompletionSource<bool> _deleteConfirmationTcs = null;
     
-    // Caching variables
-    private static List<Product> _cachedProducts = [];
-    private static DateTime _lastCacheUpdate = DateTime.MinValue;
-    private static readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5); // Cache for 5 minutes
+
 
     public OpeningInventory() {
         _isAddProductDialogOpen = false;
@@ -385,35 +382,14 @@
 
     override protected async Task OnInitializedAsync()
     {
-        // Use cached data if available and not expired
-                 if (_cachedProducts.Any() && DateTime.Now - _lastCacheUpdate < _cacheExpiration)
-         {
-             _products = _cachedProducts;
-             
-
-             
-             _isLoading = false;
-             StateHasChanged(); // Show cached data immediately
-            
-            // Load fresh data in background without showing loading state
-            _ = Task.Run(async () => await LoadProducts());
-        }
-        else
-        {
-            // No valid cache, load data normally
-            await LoadProducts();
-        }
+        await LoadProducts();
     }
 
     private async Task LoadProducts()
     {
         try
         {
-            // Only show loading state if we don't have cached data
-            if (!_cachedProducts.Any() || DateTime.Now - _lastCacheUpdate >= _cacheExpiration)
-            {
-                await InvokeAsync(() => _isLoading = true);
-            }
+            await InvokeAsync(() => _isLoading = true);
             
             // Test Firebase connection first
             var connectionTest = await FirebaseService.TestConnectionAsync();
@@ -423,10 +399,7 @@
                 return;
             }
             
-                         _products = await FirebaseService.GetProductsAsync();
-             
-             _cachedProducts = _products; // Cache the loaded products
-             _lastCacheUpdate = DateTime.Now; // Update cache timestamp
+            _products = await FirebaseService.GetProductsAsync();
         }
         catch (Exception ex)
         {
@@ -444,8 +417,7 @@
 
     private void ClearCache()
     {
-        _cachedProducts.Clear();
-        _lastCacheUpdate = DateTime.MinValue;
+        // No caching implemented
     }
 
     private List<Product> FilteredProducts
@@ -469,7 +441,6 @@
 
     private void ViewProduct(Product product)
     {
-        // TODO: Implement view product functionality
         ShowCenteredNotification($"Viewing product: {product.Name}", Severity.Info);
     }
 
@@ -481,12 +452,17 @@
              Id = product.Id,
              Name = product.Name,
              Category = product.Category,
-                          Stock = (UserState.Role == "opening" || UserState.Role == "admin") ? 0 : product.Stock, // Show 0 for opening users and admins
+                          Stock = (UserState.Role == "opening" || UserState.Role == "admin") ? product.OpeningInventoryQuantity : product.Stock, // Show OpeningInventoryQuantity for opening users and admins
              LowStockThreshold = product.LowStockThreshold,
              Price = product.Price,
              Status = product.Status,
              StatusColor = product.StatusColor,
-             CreatedAt = product.CreatedAt
+             CreatedAt = product.CreatedAt,
+             OpeningAddedStock = product.OpeningAddedStock,
+             TodayAddedStock = product.TodayAddedStock,
+             LastStockUpdateDate = product.LastStockUpdateDate,
+             OpeningInventoryQuantity = product.OpeningInventoryQuantity,
+             OpeningInventorySetBy = product.OpeningInventorySetBy
          };
         _isEditProductDialogOpen = true;
     }
@@ -503,7 +479,10 @@
             Price = product.Price,
             Status = product.Status,
             StatusColor = product.StatusColor,
-            CreatedAt = product.CreatedAt
+            CreatedAt = product.CreatedAt,
+            OpeningAddedStock = product.OpeningAddedStock,
+            TodayAddedStock = product.TodayAddedStock,
+            LastStockUpdateDate = product.LastStockUpdateDate
         };
         _addStockQuantity = 0;
         _isAddStockDialogOpen = true;
@@ -602,7 +581,7 @@
             var success = await FirebaseService.CreateProductWithActivityAsync(_newProduct);
             if (success)
             {
-                // Clear cache to force fresh data load
+                // Refresh data
                 ClearCache();
                 await LoadProducts();
                 _isAddProductDialogOpen = false;
@@ -733,16 +712,24 @@
                 return;
             }
 
-                                      // For opening users and admins, the stock field represents the ADDITIONAL opening inventory amount
-             // We need to add this to the existing stock
+                                      // For opening users and admins, set the opening inventory quantity and username
              if (UserState.Role == "opening" || UserState.Role == "admin")
              {
                  // Get the original product to find the current stock
                  var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
                  if (originalProduct != null)
                  {
-                     // Add the opening inventory amount to the existing stock
-                     _editingProduct.Stock = originalProduct.Stock + _editingProduct.Stock;
+                     // Set the opening inventory quantity (this holds the quantity, doesn't affect total stock)
+                     _editingProduct.OpeningInventoryQuantity = _editingProduct.Stock;
+                     _editingProduct.OpeningInventorySetBy = UserState.CurrentUser?.Username ?? "";
+                     
+                     // DO NOT update TodayAddedStock - opening inventory setting should not affect Today Added
+                     // Keep TodayAddedStock unchanged from the original product
+                     _editingProduct.TodayAddedStock = originalProduct.TodayAddedStock;
+                     _editingProduct.LastStockUpdateDate = originalProduct.LastStockUpdateDate;
+                     
+                     // Keep the original stock unchanged - opening inventory doesn't affect total stock yet
+                     _editingProduct.Stock = originalProduct.Stock;
                  }
              }
 
@@ -753,7 +740,7 @@
              // Set the last updated timestamp
              _editingProduct.LastUpdated = DateTime.UtcNow;
 
-            var success = await FirebaseService.UpdateProductAsync(_editingProduct);
+            var success = await FirebaseService.UpdateProductAsync(_editingProduct, UserState.CurrentUser?.Username ?? "");
             if (success)
             {
                 // Check for low stock conditions and create activities
@@ -771,12 +758,23 @@
                       originalProduct.Status = _editingProduct.Status;
                       originalProduct.StatusColor = _editingProduct.StatusColor;
                       originalProduct.LastUpdated = _editingProduct.LastUpdated;
+                      
+                      // Preserve TodayAddedStock - opening inventory setting should not affect Today Added
+                      originalProduct.TodayAddedStock = _editingProduct.TodayAddedStock;
+                      originalProduct.LastStockUpdateDate = _editingProduct.LastStockUpdateDate;
+                      
+                      // Update opening inventory fields for opening/admin roles
+                      if (UserState.Role == "opening" || UserState.Role == "admin")
+                      {
+                          originalProduct.OpeningInventoryQuantity = _editingProduct.OpeningInventoryQuantity;
+                          originalProduct.OpeningInventorySetBy = _editingProduct.OpeningInventorySetBy;
+                      }
                   }
                 
-                _isEditProductDialogOpen = false;
-                                 ShowCenteredNotification($"Product '{_editingProduct.Name}' {((UserState.Role == "opening" || UserState.Role == "admin") ? "opening inventory set" : "updated")} successfully", Severity.Success);
+                                _isEditProductDialogOpen = false;
+                ShowCenteredNotification($"Product '{_editingProduct.Name}' {((UserState.Role == "opening" || UserState.Role == "admin") ? "opening inventory set" : "updated")} successfully", Severity.Success);
                 
-                // Clear cache to force fresh data load
+                // Refresh data
                 ClearCache();
                 await LoadProducts();
             }
