@@ -11,7 +11,30 @@
     <div class="pa-2 pa-sm-4">
         <!-- Header with Buttons -->
         <div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-3 mb-sm-6">
-            <MudText Typo="Typo.h4" Class="mb-2 mb-sm-0">Admin Dashboard</MudText>
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-2 mb-sm-0">Admin Dashboard</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    @if (_startDate.HasValue || _endDate.HasValue)
+                    {
+                        @if (_startDate.HasValue && _endDate.HasValue)
+                        {
+                            <span>Showing changes from @_startDate.Value.ToString("MM/dd/yyyy") to @_endDate.Value.ToString("MM/dd/yyyy")</span>
+                        }
+                        else if (_startDate.HasValue)
+                        {
+                            <span>Showing changes from @_startDate.Value.ToString("MM/dd/yyyy") onwards</span>
+                        }
+                        else if (_endDate.HasValue)
+                        {
+                            <span>Showing changes until @_endDate.Value.ToString("MM/dd/yyyy")</span>
+                        }
+                    }
+                    else
+                    {
+                        <span>Showing today's changes only</span>
+                    }
+                </MudText>
+            </div>
             
                     <div class="d-flex gap-1 gap-sm-2">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" Elevation="0" Style="height: 40px; width: 180px; white-space: nowrap;" OnClick="OpenCreateUserModal">Create New User</MudButton>
@@ -36,7 +59,7 @@
             <MudCard Elevation="0">
                 <MudCardContent Class="pa-4 text-center">
                     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                                         <MudText Class="mt-2">Loading opening-modified products...</MudText>
+                                         <MudText Class="mt-2">Loading today's opening/admin-modified products...</MudText>
                 </MudCardContent>
             </MudCard>
         }
@@ -51,10 +74,9 @@
                             <HeaderContent>
                                 <MudTh>Product Name</MudTh>
                                 <MudTh>Category</MudTh>
-                                <MudTh>Added</MudTh>
+                                <MudTh>Today Added</MudTh>
                                 <MudTh>Opening</MudTh>
                                 <MudTh>Closing</MudTh>
-                                <MudTh>Action</MudTh>
                             </HeaderContent>
                             <RowTemplate>
                                 <MudTd>@context.Name</MudTd>
@@ -70,12 +92,7 @@
                                 <MudTd>
                                     <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
                                 </MudTd>
-                                <MudTd>
-                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
-                                        <MudMenuItem OnClick="@(() => EditProduct(context))">Update</MudMenuItem>
-                                        <MudMenuItem OnClick="@(() => AddStockProduct(context))">Add Stock</MudMenuItem>
-                                    </MudMenu>
-                                </MudTd>
+
                             </RowTemplate>
                             <PagerContent><MudTablePager /></PagerContent>
                         </MudTable>
@@ -84,8 +101,26 @@
                     {
                                                  <div class="text-center pa-4">
                              <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" />
-                             <MudText Typo="Typo.h6" Class="mt-2">No products modified by Opening role</MudText>
-                             <MudText Typo="Typo.body2" Color="Color.Secondary">This view only shows products that have been modified by users with Opening role</MudText>
+                                                           <MudText Typo="Typo.h6" Class="mt-2">
+                                  @if (_startDate.HasValue || _endDate.HasValue)
+                                  {
+                                      <span>No products modified in selected date range by Opening role or Admin</span>
+                                  }
+                                  else
+                                  {
+                                      <span>No products modified today by Opening role or Admin</span>
+                                  }
+                              </MudText>
+                              <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                  @if (_startDate.HasValue || _endDate.HasValue)
+                                  {
+                                      <span>This view shows products that have been modified by users with Opening role or Admin in the selected date range</span>
+                                  }
+                                  else
+                                  {
+                                      <span>This view only shows products that have been modified by users with Opening role or Admin today</span>
+                                  }
+                              </MudText>
                          </div>
                     }
                 </MudCardContent>
@@ -633,18 +668,23 @@
     {
         get
         {
-            // Only show products that have been modified by opening role users
+            // Get today's date in Philippine timezone
+            var today = DateTime.UtcNow.AddHours(8).Date;
+            
+            // Start with all products modified by opening role users or admin users
             var openingModifiedProducts = _products.Where(product => 
                 !string.IsNullOrEmpty(product.LastModifiedBy) && 
-                product.LastModifiedBy.ToLower().Contains("opening") &&
+                (product.LastModifiedBy.ToLower().Contains("opening") || product.LastModifiedBy.ToLower().Contains("admin")) &&
+                product.LastUpdated.HasValue &&
                 (string.IsNullOrEmpty(_searchString) || 
                  product.Name.ToLower().Contains(_searchString.ToLower()) ||
                  product.Category.ToLower().Contains(_searchString.ToLower())) &&
                 (string.IsNullOrEmpty(_selectedCategory) || product.Category == _selectedCategory));
 
-            // Apply date range filtering
+            // Apply date filtering
             if (_startDate.HasValue || _endDate.HasValue)
             {
+                // If user has set custom date range, use that instead of today's filter
                 openingModifiedProducts = openingModifiedProducts.Where(product =>
                 {
                     if (product.LastUpdated == null) return false;
@@ -680,6 +720,12 @@
                     
                     return true;
                 });
+            }
+            else
+            {
+                // If no custom date range is set, default to today's changes only
+                openingModifiedProducts = openingModifiedProducts.Where(product => 
+                    product.LastUpdated.Value.Date == today);
             }
 
             return _sortOrder switch
@@ -764,14 +810,10 @@
 
     private string GetOpeningAddedStock(Product product)
     {
-        // This method should calculate the total stock added by Opening role users
-        // For now, we'll return a placeholder. This should be implemented based on your data structure
-        // You might need to track stock additions in a separate collection or add fields to the Product model
-        
-        // Placeholder implementation - replace with actual logic
-        if (product.OpeningAddedStock > 0)
+        // Show today's added stock instead of cumulative total
+        if (product.TodayAddedStock > 0)
         {
-            return $"{product.OpeningAddedStock} units";
+            return $"{product.TodayAddedStock} units";
         }
         
         return "0 units";

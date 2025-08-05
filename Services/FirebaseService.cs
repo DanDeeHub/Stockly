@@ -140,9 +140,11 @@ namespace Stockly.Services
                         Price = data.ContainsKey("price") ? Convert.ToDecimal(data["price"]) : 0,
                         LowStockThreshold = data.ContainsKey("lowStockThreshold") ? Convert.ToInt32(data["lowStockThreshold"]) : 10,
                         CreatedAt = data.ContainsKey("createdAt") ? ((Timestamp)data["createdAt"]).ToDateTime() : DateTime.UtcNow,
-                        LastUpdated = data.ContainsKey("lastUpdated") ? ((Timestamp)data["lastUpdated"]).ToDateTime().AddHours(8) : null,
+                        LastUpdated = data.ContainsKey("lastUpdated") ? ((Timestamp)data["lastUpdated"]).ToDateTime() : null,
                         LastModifiedBy = data.ContainsKey("lastModifiedBy") ? data["lastModifiedBy"].ToString() : null,
-                        OpeningAddedStock = data.ContainsKey("openingAddedStock") ? Convert.ToInt32(data["openingAddedStock"]) : 0
+                        OpeningAddedStock = data.ContainsKey("openingAddedStock") ? Convert.ToInt32(data["openingAddedStock"]) : 0,
+                        TodayAddedStock = data.ContainsKey("todayAddedStock") ? Convert.ToInt32(data["todayAddedStock"]) : 0,
+                        LastStockUpdateDate = data.ContainsKey("lastStockUpdateDate") ? ((Timestamp)data["lastStockUpdateDate"]).ToDateTime() : null
                     };
                     
                     // Set status color based on status
@@ -157,11 +159,57 @@ namespace Stockly.Services
                     products.Add(product);
                 }
                 
+                // Initialize missing fields for existing products
+                await InitializeMissingFieldsForExistingProducts();
+                
                 return products;
             }
             catch (Exception)
             {
                 return new List<Product>();
+            }
+        }
+
+        private async Task InitializeMissingFieldsForExistingProducts()
+        {
+            try
+            {
+                CollectionReference productsRef = _db.Collection("products");
+                QuerySnapshot snapshot = await productsRef.GetSnapshotAsync();
+                
+                foreach (DocumentSnapshot doc in snapshot.Documents)
+                {
+                    var data = doc.ConvertTo<Dictionary<string, object>>();
+                    
+                    // Check if the product is missing the new fields
+                    bool needsUpdate = !data.ContainsKey("todayAddedStock") || !data.ContainsKey("lastStockUpdateDate");
+                    
+                    if (needsUpdate)
+                    {
+                        var updateData = new Dictionary<string, object>();
+                        
+                        // Initialize todayAddedStock to 0 for existing products
+                        if (!data.ContainsKey("todayAddedStock"))
+                        {
+                            updateData["todayAddedStock"] = 0;
+                        }
+                        
+                        // Initialize lastStockUpdateDate to current time for existing products
+                        if (!data.ContainsKey("lastStockUpdateDate"))
+                        {
+                            updateData["lastStockUpdateDate"] = Timestamp.FromDateTime(GetPhilippineTime());
+                        }
+                        
+                        if (updateData.Count > 0)
+                        {
+                            await doc.Reference.UpdateAsync(updateData);
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore errors during migration
             }
         }
 
@@ -283,10 +331,36 @@ namespace Stockly.Services
                 // Otherwise, use the new modifiedBy value
                 var finalLastModifiedBy = currentLastModifiedBy.ToLower().Contains("opening") ? currentLastModifiedBy : modifiedBy;
                 
+                // Calculate today's added stock
+                var today = GetPhilippineTime().Date;
+                var currentLastStockUpdateDate = currentData.ContainsKey("lastStockUpdateDate") ? 
+                    ((Timestamp)currentData["lastStockUpdateDate"]).ToDateTime().Date : today;
+                var currentTodayAddedStock = currentData.ContainsKey("todayAddedStock") ? 
+                    Convert.ToInt32(currentData["todayAddedStock"]) : 0;
+                var currentOpeningAddedStock = currentData.ContainsKey("openingAddedStock") ? 
+                    Convert.ToInt32(currentData["openingAddedStock"]) : 0;
+                
+                int todayAddedStock = 0;
+                
+                // If this is a new day, reset today's added stock to the difference
+                if (currentLastStockUpdateDate != today)
+                {
+                    // New day: calculate the difference from the last update
+                    todayAddedStock = openingAddedStock - currentOpeningAddedStock;
+                }
+                else
+                {
+                    // Same day: add the new difference to today's total
+                    var newDifference = openingAddedStock - currentOpeningAddedStock;
+                    todayAddedStock = currentTodayAddedStock + newDifference;
+                }
+                
                 var productData = new Dictionary<string, object>
                 {
                     { "stock", newStock },
                     { "openingAddedStock", openingAddedStock },
+                    { "todayAddedStock", todayAddedStock },
+                    { "lastStockUpdateDate", Timestamp.FromDateTime(GetPhilippineTime()) },
                     { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) },
                     { "lastModifiedBy", finalLastModifiedBy }
                 };
@@ -710,6 +784,8 @@ namespace Stockly.Services
         public string? LastModifiedBy { get; set; } // Username who last modified the product
         public int LowStockThreshold { get; set; } = 10; // Default threshold for low stock alerts
         public int OpeningAddedStock { get; set; } = 0; // Cumulative stock added by Opening role users
+        public int TodayAddedStock { get; set; } = 0; // Stock added today by Opening role users
+        public DateTime? LastStockUpdateDate { get; set; } // Date of last stock update to track daily additions
     }
 
     public class Activity
