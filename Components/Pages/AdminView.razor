@@ -832,14 +832,15 @@
             // Only apply colors to "Add Stock" entries (Recent Entry column)
             if (product.TodayAddedStock != 0 && !string.IsNullOrEmpty(product.LastModifiedBy))
             {
-                // Check if the LastModifiedBy contains "(opening)" to distinguish from Products page updates
-                if (product.LastModifiedBy.ToLower().Contains("(opening)"))
-                {
-                    return Color.Secondary; // Purple color for Opening Inventory "Add Stock" updates
-                }
-                else if (product.LastModifiedBy.ToLower().Contains("(products)"))
+                // Check if the LastModifiedBy contains "(products)" first - Products page updates should stay orange
+                if (product.LastModifiedBy.ToLower().Contains("(products)"))
                 {
                     return Color.Warning; // Orange/Warning color for Products page updates
+                }
+                // Then check for "(opening)" - Opening Inventory "Add Stock" updates
+                else if (product.LastModifiedBy.ToLower().Contains("(opening)"))
+                {
+                    return Color.Primary; // Blue color for Opening Inventory "Add Stock" updates
                 }
                 else
                 {

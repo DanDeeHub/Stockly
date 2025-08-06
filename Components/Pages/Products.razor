@@ -473,7 +473,16 @@
             Price = product.Price,
             Status = product.Status,
             StatusColor = product.StatusColor,
-            CreatedAt = product.CreatedAt
+            CreatedAt = product.CreatedAt,
+            LastUpdated = product.LastUpdated,
+            LastModifiedBy = product.LastModifiedBy,
+            TodayAddedStock = product.TodayAddedStock,
+            LastStockUpdateDate = product.LastStockUpdateDate,
+            OpeningAddedStock = product.OpeningAddedStock,
+            OpeningInventoryQuantity = product.OpeningInventoryQuantity,
+            OpeningInventorySetBy = product.OpeningInventorySetBy,
+            ClosingInventoryQuantity = product.ClosingInventoryQuantity,
+            ClosingInventorySetBy = product.ClosingInventorySetBy
         };
         _isEditProductDialogOpen = true;
     }
@@ -670,6 +679,12 @@
                     originalProduct.LastModifiedBy = _editingProduct.LastModifiedBy;
                     originalProduct.TodayAddedStock = _editingProduct.TodayAddedStock;
                     originalProduct.LastStockUpdateDate = _editingProduct.LastStockUpdateDate;
+                    
+                    // Preserve Opening and Closing inventory data
+                    originalProduct.OpeningInventoryQuantity = _editingProduct.OpeningInventoryQuantity;
+                    originalProduct.OpeningInventorySetBy = _editingProduct.OpeningInventorySetBy;
+                    originalProduct.ClosingInventoryQuantity = _editingProduct.ClosingInventoryQuantity;
+                    originalProduct.ClosingInventorySetBy = _editingProduct.ClosingInventorySetBy;
                 }
                 
                 _isEditProductDialogOpen = false;
