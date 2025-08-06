@@ -12,6 +12,7 @@ namespace Stockly.Services
     public class FirebaseService
     {
         private readonly FirestoreDb _db;
+        private static bool _hasInitializedMissingFields = false; // Flag to prevent repeated initialization
 
         public FirebaseService(IConfiguration configuration)
         {
@@ -165,8 +166,12 @@ namespace Stockly.Services
                     products.Add(product);
                 }
                 
-                // Initialize missing fields for existing products
-                await InitializeMissingFieldsForExistingProducts();
+                // Only initialize missing fields once per application session
+                if (!_hasInitializedMissingFields)
+                {
+                    await InitializeMissingFieldsForExistingProducts();
+                    _hasInitializedMissingFields = true;
+                }
                 
                 return products;
             }
@@ -182,6 +187,8 @@ namespace Stockly.Services
             {
                 CollectionReference productsRef = _db.Collection("products");
                 QuerySnapshot snapshot = await productsRef.GetSnapshotAsync();
+                
+                var updateTasks = new List<Task>();
                 
                 foreach (DocumentSnapshot doc in snapshot.Documents)
                 {
@@ -208,9 +215,15 @@ namespace Stockly.Services
                         
                         if (updateData.Count > 0)
                         {
-                            await doc.Reference.UpdateAsync(updateData);
+                            updateTasks.Add(doc.Reference.UpdateAsync(updateData));
                         }
                     }
+                }
+                
+                // Execute all updates in parallel if any exist
+                if (updateTasks.Count > 0)
+                {
+                    await Task.WhenAll(updateTasks);
                 }
             }
             catch (Exception)

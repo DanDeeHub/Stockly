@@ -53,7 +53,7 @@
                             <HeaderContent>
                                 <MudTh>Product Name</MudTh>
                                 <MudTh>Category</MudTh>
-                                <MudTh>Today Added</MudTh>
+                                <MudTh>Recent Entry</MudTh>
                                 <MudTh>Opening</MudTh>
                                 <MudTh>Closing</MudTh>
                             </HeaderContent>
@@ -101,11 +101,11 @@
                                                                                           <MudText Typo="Typo.h6" Class="mt-2">
                                    @if (_startDate.HasValue || _endDate.HasValue)
                                    {
-                                       <span>No Opening Inventory changes in selected date range</span>
+                                       <span>No Inventory changes in selected date range</span>
                                    }
                                    else
                                    {
-                                       <span>No Opening Inventory changes today</span>
+                                       <span>No Inventory changes today</span>
                                    }
                                </MudText>
                                <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -557,24 +557,9 @@
 
     private async Task CreateReminder()
     {
-        await reminderForm.Validate();
-        
-        if (!isReminderValid)
+        if (string.IsNullOrWhiteSpace(_newReminder.Title) || string.IsNullOrWhiteSpace(_newReminder.Message))
         {
-            reminderErrorMessage = "Please fill out all required fields";
-            return;
-        }
-
-        // Validate input
-        if (string.IsNullOrWhiteSpace(_newReminder.Title))
-        {
-            reminderErrorMessage = "Title is required";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_newReminder.Message))
-        {
-            reminderErrorMessage = "Message is required";
+            reminderErrorMessage = "Please fill in both title and message.";
             return;
         }
 
@@ -583,14 +568,6 @@
 
         try
         {
-            // Test Firebase connection first
-            var connectionTest = await FirebaseService.TestConnectionAsync();
-            if (!connectionTest)
-            {
-                reminderErrorMessage = "Failed to connect to database. Please check your connection.";
-                return;
-            }
-            
             var creatorUsername = UserState.CurrentUser?.Username ?? "Admin";
             
             var success = await FirebaseService.CreateReminderAsync(
@@ -637,14 +614,6 @@
         try
         {
             await InvokeAsync(() => _isLoading = true);
-            
-            // Test Firebase connection first
-            var connectionTest = await FirebaseService.TestConnectionAsync();
-            if (!connectionTest)
-            {
-                await InvokeAsync(() => ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error));
-                return;
-            }
             
             _products = await FirebaseService.GetProductsAsync();
         }

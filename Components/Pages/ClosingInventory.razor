@@ -347,14 +347,6 @@
         {
             await InvokeAsync(() => _isLoading = true);
             
-            // Test Firebase connection first
-            var connectionTest = await FirebaseService.TestConnectionAsync();
-            if (!connectionTest)
-            {
-                await InvokeAsync(() => ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error));
-                return;
-            }
-            
             _products = await FirebaseService.GetProductsAsync();
         }
         catch (Exception ex)

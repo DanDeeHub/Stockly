@@ -476,28 +476,23 @@ else
     }
 
     // Method to clear reminder cache and reload reminders
-    private void ClearReminderCache()
+    private async void ClearReminderCache()
     {
-        // Force reload of reminders immediately
-        _ = Task.Run(async () => 
+        try
         {
             await LoadReminders();
             await InvokeAsync(StateHasChanged);
-        });
+        }
+        catch (Exception ex)
+        {
+            await InvokeAsync(() => ShowCenteredNotification($"Error reloading reminders: {ex.Message}", Severity.Error));
+        }
     }
 
     private async Task LoadProducts()
     {
         try
         {
-            // Test Firebase connection first
-            var connectionTest = await FirebaseService.TestConnectionAsync();
-            if (!connectionTest)
-            {
-                await InvokeAsync(() => ShowCenteredNotification("Failed to connect to Firebase. Please check your credentials.", Severity.Error));
-                return;
-            }
-            
             _products = await FirebaseService.GetProductsAsync();
             await InvokeAsync(StateHasChanged); // Update UI with fresh data on UI thread
         }
