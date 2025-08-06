@@ -71,14 +71,14 @@
                                 <MudTd>₱@context.Price.ToString("N0")</MudTd>
                                 <MudTd>
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                                                @if (context.LastUpdated.HasValue)
-                        {
-                            @($"{GetTimeAgo(context.LastUpdated.Value)} | {context.LastModifiedBy ?? ""}")
-                        }
-                        else
-                        {
-                            <MudText Color="Color.Info" Typo="Typo.caption">New</MudText>
-                        }
+                                        @if (context.LastUpdated.HasValue)
+                                        {
+                                            @GetFormattedLastModified(context)
+                                        }
+                                        else
+                                        {
+                                            <MudText Color="Color.Info" Typo="Typo.caption">New</MudText>
+                                        }
                                     </MudText>
                                 </MudTd>
                                 <MudTd>
@@ -620,9 +620,35 @@
                 return;
             }
 
-            // Automatically set status based on stock and threshold
-            _editingProduct.Status = GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold);
-            _editingProduct.StatusColor = GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+            // Get the original product to calculate stock change
+            var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
+            if (originalProduct != null)
+            {
+                // Calculate stock change
+                var stockChange = _editingProduct.Stock - originalProduct.Stock;
+                
+                // Automatically set status based on stock and threshold
+                _editingProduct.Status = GetStatusText(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+                _editingProduct.StatusColor = GetStatusColor(_editingProduct.Stock, _editingProduct.LowStockThreshold);
+                
+                // Update the stock change tracking fields
+                _editingProduct.LastUpdated = DateTime.UtcNow.AddHours(8); // Philippine time
+                _editingProduct.LastModifiedBy = $"{UserState.CurrentUser?.Username ?? "Unknown"} (products)";
+                
+                // Track the stock value for the Recent Entry display
+                if (stockChange != 0)
+                {
+                    // Store the actual input value (what the user typed), not the change amount
+                    _editingProduct.TodayAddedStock = _editingProduct.Stock;
+                    _editingProduct.LastStockUpdateDate = DateTime.UtcNow.AddHours(8); // Philippine time
+                }
+                else
+                {
+                    // If there's no stock change, preserve the existing TodayAddedStock value
+                    // so the product doesn't disappear from the Recent Entry list
+                    _editingProduct.TodayAddedStock = originalProduct.TodayAddedStock;
+                }
+            }
 
             var success = await FirebaseService.UpdateProductAsync(_editingProduct, UserState.CurrentUser?.Username ?? "");
             if (success)
@@ -630,8 +656,7 @@
                 // Check for low stock conditions and create activities
                 await FirebaseService.CheckLowStockAndCreateActivityAsync(_editingProduct);
                 
-                // Find and update the original product in the list
-                var originalProduct = _products.FirstOrDefault(p => p.Id == _editingProduct.Id);
+                // Update the original product in the list
                 if (originalProduct != null)
                 {
                     originalProduct.Name = _editingProduct.Name;
@@ -641,8 +666,10 @@
                     originalProduct.Price = _editingProduct.Price;
                     originalProduct.Status = _editingProduct.Status;
                     originalProduct.StatusColor = _editingProduct.StatusColor;
-                    originalProduct.LastUpdated = DateTime.UtcNow.AddHours(8); // Philippine time
-                    originalProduct.LastModifiedBy = UserState.CurrentUser?.Username ?? "Unknown";
+                    originalProduct.LastUpdated = _editingProduct.LastUpdated;
+                    originalProduct.LastModifiedBy = _editingProduct.LastModifiedBy;
+                    originalProduct.TodayAddedStock = _editingProduct.TodayAddedStock;
+                    originalProduct.LastStockUpdateDate = _editingProduct.LastStockUpdateDate;
                 }
                 
                 _isEditProductDialogOpen = false;
@@ -788,6 +815,41 @@
              return Color.Warning;
          else
              return Color.Success;
+     }
+
+     private string GetFormattedLastModified(Product product)
+     {
+         if (product.LastUpdated.HasValue && !string.IsNullOrEmpty(product.LastModifiedBy))
+         {
+             var timeAgo = GetTimeAgo(product.LastUpdated.Value);
+             
+             // Strip the "(opening)" or "(products)" suffix from the display
+             var displayUsername = product.LastModifiedBy ?? "";
+             
+             // More aggressive suffix removal - remove ALL instances
+             displayUsername = displayUsername
+                 .Replace("(opening)", "")
+                 .Replace("(products)", "")
+                 .Replace("(product)", "")
+                 .Replace("opening", "")
+                 .Replace("products", "")
+                 .Replace("product", "")
+                 .Replace("()", "")
+                 .Replace("  ", " ") // Replace double spaces with single space
+                 .Trim();
+             
+             // Ensure we have a valid username
+             if (string.IsNullOrWhiteSpace(displayUsername))
+             {
+                 displayUsername = "Unknown";
+             }
+             
+             // Format: X | username | minutes ago (where X is the input value)
+             var inputValue = product.TodayAddedStock;
+             return $"{inputValue} | {displayUsername} | {timeAgo}";
+         }
+         
+         return "-";
      }
 
      private string GetTimeAgo(DateTime timestamp)

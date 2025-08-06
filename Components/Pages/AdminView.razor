@@ -27,7 +27,8 @@
                 <div class="d-flex gap-2 align-center" style="align-items: center;">
                     <MudTextField @bind-Value="_searchString" Placeholder="Search products or categories..." Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Style="height: 40px; flex: 1; min-height: 40px; max-height: 40px; line-height: 40px;" />
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.DateRange" Size="Size.Small" Style="height: 40px; min-width: 140px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="OpenDateRangeModal">Date Range</MudButton>
-                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Style="height: 40px; width: 40px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="ClearAllFilters" title="Clear all filters" Color="Color.Secondary" Variant="Variant.Outlined"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Style="height: 40px; width: 40px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="RefreshData" title="Refresh data" Color="Color.Primary" Variant="Variant.Outlined"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Clear" Size="Size.Small" Style="height: 40px; width: 40px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="ClearAllFilters" title="Clear all filters" Color="Color.Secondary" Variant="Variant.Outlined"></MudIconButton>
                 </div>
             </MudCardContent>
         </MudCard>
@@ -61,20 +62,13 @@
                                 <MudTd>@context.Name</MudTd>
                                 <MudTd>@context.Category</MudTd>
                                 <MudTd>
-                                    <MudText Typo="Typo.body2" Color="Color.Primary">
-                                        @GetOpeningAddedStock(context)
+                                    <MudText Typo="Typo.body2" Color="@GetRecentEntryColor(context)">
+                                        @GetRecentEntry(context)
                                     </MudText>
                                 </MudTd>
                                 <MudTd>
                                     <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                        @if (context.OpeningInventoryQuantity > 0)
-                                        {
-                                            <span>@context.OpeningInventoryQuantity | @context.OpeningInventorySetBy</span>
-                                        }
-                                        else
-                                        {
-                                            <span>-</span>
-                                        }
+                                        @GetOpeningInventoryEntry(context)
                                     </MudText>
                                 </MudTd>
                                 <MudTd>
@@ -638,10 +632,10 @@
             // Get today's date in Philippine timezone
             var today = DateTime.UtcNow.AddHours(8).Date;
             
-            // Start with all products that have been modified through Opening Inventory (stock updates)
-            // Show products that have OpeningAddedStock > 0 (Add Stock) OR OpeningInventoryQuantity > 0 (Set Inventory)
+            // Start with all products that have been modified through Opening Inventory OR Products page (stock updates)
+            // Show products that have OpeningAddedStock > 0 (Add Stock) OR OpeningInventoryQuantity > 0 (Set Inventory) OR TodayAddedStock != 0 (Products page updates)
             var openingModifiedProducts = _products.Where(product => 
-                (product.OpeningAddedStock > 0 || product.OpeningInventoryQuantity > 0) && // Products modified through Opening Inventory
+                (product.OpeningAddedStock > 0 || product.OpeningInventoryQuantity > 0 || product.TodayAddedStock != 0) && // Products modified through Opening Inventory or Products page
                 product.LastUpdated.HasValue &&
                 (string.IsNullOrEmpty(_searchString) || 
                  product.Name.ToLower().Contains(_searchString.ToLower()) ||
@@ -719,6 +713,13 @@
         // No caching implemented
     }
 
+    private async Task RefreshData()
+    {
+        await LoadProducts();
+        StateHasChanged(); // Force UI update
+        ShowCenteredNotification("Data refreshed", Severity.Success);
+    }
+
     private void ClearAllFilters()
     {
         // Clear all actual filter values immediately
@@ -778,14 +779,76 @@
         });
     }
 
-    private string GetOpeningAddedStock(Product product)
-    {
-        // Show today added stock (this is what gets updated when adding stock through Opening Inventory)
-        if (product.TodayAddedStock > 0)
+                private string GetRecentEntry(Product product)
+            {
+                // Show "Add Stock" entries in Recent Entry column
+                if (product.TodayAddedStock != 0 && product.LastUpdated.HasValue && !string.IsNullOrEmpty(product.LastModifiedBy))
+                {
+                    var timeAgo = GetTimeAgo(product.LastUpdated.Value);
+                    
+                    // Strip the "(opening)" or "(products)" suffix from the display
+                    var displayUsername = product.LastModifiedBy ?? "";
+                    
+                    // Remove only the specific suffix patterns, not the entire word
+                    displayUsername = displayUsername
+                        .Replace(" (opening)", "")
+                        .Replace(" (products)", "")
+                        .Replace(" (product)", "")
+                        .Replace("()", "")
+                        .Replace("  ", " ") // Replace double spaces with single space
+                        .Trim();
+                    
+                    // Ensure we have a valid username
+                    if (string.IsNullOrWhiteSpace(displayUsername))
+                    {
+                        displayUsername = "Unknown";
+                    }
+                    
+                    // Format: X | username | minutes ago (where X is the input value)
+                    var inputValue = product.TodayAddedStock;
+                    return $"{inputValue} | {displayUsername} | {timeAgo}";
+                }
+                
+                return "-";
+            }
+
+            private string GetOpeningInventoryEntry(Product product)
+            {
+                // Show "Set Opening Quantity" entries in Opening column
+                if (product.OpeningInventoryQuantity > 0 && !string.IsNullOrEmpty(product.OpeningInventorySetBy))
+                {
+                    // Format: X | username (where X is the opening inventory quantity)
+                    // Don't use time calculation since LastUpdated gets changed by other operations
+                    var inputValue = product.OpeningInventoryQuantity;
+                    var username = product.OpeningInventorySetBy;
+                    return $"{inputValue} | {username}";
+                }
+                
+                return "-";
+            }
+
+                    private Color GetRecentEntryColor(Product product)
         {
-            return $"{product.TodayAddedStock} units";
+            // Only apply colors to "Add Stock" entries (Recent Entry column)
+            if (product.TodayAddedStock != 0 && !string.IsNullOrEmpty(product.LastModifiedBy))
+            {
+                // Check if the LastModifiedBy contains "(opening)" to distinguish from Products page updates
+                if (product.LastModifiedBy.ToLower().Contains("(opening)"))
+                {
+                    return Color.Secondary; // Purple color for Opening Inventory "Add Stock" updates
+                }
+                else if (product.LastModifiedBy.ToLower().Contains("(products)"))
+                {
+                    return Color.Warning; // Orange/Warning color for Products page updates
+                }
+                else
+                {
+                    // Default color for any other updates
+                    return Color.Primary;
+                }
+            }
+            
+            // Default color if no "Add Stock" entry
+            return Color.Primary;
         }
-        
-        return "0 units";
-    }
 }

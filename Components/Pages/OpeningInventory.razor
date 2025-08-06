@@ -60,7 +60,7 @@
                                         <MudText Typo="Typo.caption" Color="Color.Secondary">
                                             @if (context.LastUpdated.HasValue)
                                             {
-                                                @($"{GetTimeAgo(context.LastUpdated.Value)} | {context.LastModifiedBy ?? ""}")
+                                                @GetFormattedLastModified(context)
                                             }
                                             else
                                             {
@@ -630,6 +630,9 @@
                 // Calculate the new cumulative opening added stock
                 var newOpeningAddedStock = originalProduct.OpeningAddedStock + _addStockQuantity;
                 
+                // Store only the specific stock addition amount, not accumulated
+                var todayAddedStock = _addStockQuantity;
+                
                 // Create a new product object with the updated stock
                 var updatedProduct = new Product
                 {
@@ -643,10 +646,13 @@
                     StatusColor = GetStatusColor(updatedStock, originalProduct.LowStockThreshold),
                     CreatedAt = originalProduct.CreatedAt,
                     LastUpdated = DateTime.UtcNow,
-                    OpeningAddedStock = newOpeningAddedStock
+                    LastModifiedBy = $"{UserState.CurrentUser?.Username ?? ""} (opening)",
+                    OpeningAddedStock = newOpeningAddedStock,
+                    TodayAddedStock = todayAddedStock,
+                    LastStockUpdateDate = DateTime.UtcNow.AddHours(8) // Philippine time
                 };
 
-                var success = await FirebaseService.UpdateProductStockAsync(originalProduct.Id.ToString(), updatedStock, newOpeningAddedStock, UserState.CurrentUser?.Username ?? "");
+                var success = await FirebaseService.UpdateProductStockAsync(originalProduct.Id.ToString(), updatedStock, newOpeningAddedStock, todayAddedStock, $"{UserState.CurrentUser?.Username ?? ""} (opening)");
                 if (success)
                 {
                     // Check for low stock conditions and create activities
@@ -901,6 +907,37 @@
          else
              return Color.Success;
      }
+
+                       private string GetFormattedLastModified(Product product)
+       {
+           if (product.LastUpdated.HasValue && !string.IsNullOrEmpty(product.LastModifiedBy))
+           {
+               var timeAgo = GetTimeAgo(product.LastUpdated.Value);
+               
+               // Strip the "(opening)" or "(products)" suffix from the display
+               var displayUsername = product.LastModifiedBy ?? "";
+               
+               // Remove only the specific suffix patterns, not the entire word
+               displayUsername = displayUsername
+                   .Replace(" (opening)", "")
+                   .Replace(" (products)", "")
+                   .Replace(" (product)", "")
+                   .Replace("()", "")
+                   .Replace("  ", " ") // Replace double spaces with single space
+                   .Trim();
+               
+               // Ensure we have a valid username
+               if (string.IsNullOrWhiteSpace(displayUsername))
+               {
+                   displayUsername = "Unknown";
+               }
+               
+               // Format: username | minutes ago (for Opening Inventory page)
+               return $"{displayUsername} | {timeAgo}";
+           }
+           
+           return "-";
+       }
 
      private string GetTimeAgo(DateTime timestamp)
      {

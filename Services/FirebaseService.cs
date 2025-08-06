@@ -317,7 +317,25 @@ namespace Stockly.Services
             {
                 DocumentReference productRef = _db.Collection("products").Document(product.Id.ToString());
                 
-
+                // Get the current product to calculate stock changes if needed
+                var currentDoc = await productRef.GetSnapshotAsync();
+                var currentData = currentDoc.ConvertTo<Dictionary<string, object>>();
+                var currentStock = currentData.ContainsKey("stock") ? Convert.ToInt32(currentData["stock"]) : 0;
+                
+                // Calculate stock change
+                var stockChange = product.Stock - currentStock;
+                
+                // If there was a stock change, update TodayAddedStock
+                if (stockChange != 0)
+                {
+                    // The Products page has already calculated TodayAddedStock with the absolute value
+                    // of the specific change, so we respect that value
+                    // Just ensure LastStockUpdateDate is set if it's not already
+                    if (product.LastStockUpdateDate == null)
+                    {
+                        product.LastStockUpdateDate = GetPhilippineTime();
+                    }
+                }
                 
                 var productData = new Dictionary<string, object>
                 {
@@ -336,7 +354,7 @@ namespace Stockly.Services
                     { "closingInventorySetBy", product.ClosingInventorySetBy },
                     { "updatedAt", Timestamp.FromDateTime(GetPhilippineTime()) },
                     { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) },
-                    { "lastModifiedBy", modifiedBy }
+                    { "lastModifiedBy", product.LastModifiedBy ?? modifiedBy }
                 };
 
                 await productRef.UpdateAsync(productData);
@@ -350,45 +368,13 @@ namespace Stockly.Services
             }
         }
 
-        public async Task<bool> UpdateProductStockAsync(string productId, int newStock, int openingAddedStock, string modifiedBy = "")
+        public async Task<bool> UpdateProductStockAsync(string productId, int newStock, int openingAddedStock, int todayAddedStock, string modifiedBy = "")
         {
             try
             {
                 DocumentReference productRef = _db.Collection("products").Document(productId);
                 
-                // First, get the current product to check if LastModifiedBy already contains "opening"
-                var currentDoc = await productRef.GetSnapshotAsync();
-                var currentData = currentDoc.ConvertTo<Dictionary<string, object>>();
-                var currentLastModifiedBy = currentData.ContainsKey("lastModifiedBy") ? currentData["lastModifiedBy"].ToString() : "";
-                
-                // If the current LastModifiedBy already contains "opening", preserve it
-                // Otherwise, use the new modifiedBy value
-                var finalLastModifiedBy = currentLastModifiedBy.ToLower().Contains("opening") ? currentLastModifiedBy : modifiedBy;
-                
-                // Calculate today's added stock
-                var today = GetPhilippineTime().Date;
-                var currentLastStockUpdateDate = currentData.ContainsKey("lastStockUpdateDate") ? 
-                    ((Timestamp)currentData["lastStockUpdateDate"]).ToDateTime().Date : today;
-                var currentTodayAddedStock = currentData.ContainsKey("todayAddedStock") ? 
-                    Convert.ToInt32(currentData["todayAddedStock"]) : 0;
-                var currentOpeningAddedStock = currentData.ContainsKey("openingAddedStock") ? 
-                    Convert.ToInt32(currentData["openingAddedStock"]) : 0;
-                
-                int todayAddedStock = 0;
-                
-                // If this is a new day, reset today's added stock to the difference
-                if (currentLastStockUpdateDate != today)
-                {
-                    // New day: calculate the difference from the last update
-                    todayAddedStock = openingAddedStock - currentOpeningAddedStock;
-                }
-                else
-                {
-                    // Same day: add the new difference to today's total
-                    var newDifference = openingAddedStock - currentOpeningAddedStock;
-                    todayAddedStock = currentTodayAddedStock + newDifference;
-                }
-                
+                // Use the modifiedBy parameter which should contain the suffix (opening) from OpeningInventory.razor
                 var productData = new Dictionary<string, object>
                 {
                     { "stock", newStock },
@@ -396,7 +382,7 @@ namespace Stockly.Services
                     { "todayAddedStock", todayAddedStock },
                     { "lastStockUpdateDate", Timestamp.FromDateTime(GetPhilippineTime()) },
                     { "lastUpdated", Timestamp.FromDateTime(GetPhilippineTime()) },
-                    { "lastModifiedBy", finalLastModifiedBy }
+                    { "lastModifiedBy", modifiedBy }
                 };
 
                 await productRef.UpdateAsync(productData);
