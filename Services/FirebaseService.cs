@@ -131,7 +131,7 @@ namespace Stockly.Services
                     var data = doc.ConvertTo<Dictionary<string, object>>();
                     var product = new Product
                     {
-                        Id = doc.Id,
+                        Id = Guid.TryParse(doc.Id, out var guid) ? guid : Guid.Empty,
                         Name = data.ContainsKey("name") ? data["name"].ToString() : "",
                         Category = data.ContainsKey("category") ? data["category"].ToString() : "",
                         Stock = data.ContainsKey("stock") ? Convert.ToInt32(data["stock"]) : 0,
@@ -235,7 +235,7 @@ namespace Stockly.Services
             }
         }
 
-        public async Task<bool> CheckProductNameExistsAsync(string productName, string excludeProductId)
+        public async Task<bool> CheckProductNameExistsAsync(string productName, Guid excludeProductId)
         {
             try
             {
@@ -246,7 +246,7 @@ namespace Stockly.Services
                 // Check if any product with this name exists, excluding the specified product ID
                 foreach (var doc in snapshot.Documents)
                 {
-                    if (doc.Id != excludeProductId)
+                    if (Guid.TryParse(doc.Id, out var docGuid) && docGuid != excludeProductId)
                     {
                         return true; // Found another product with the same name
                     }
@@ -270,6 +270,10 @@ namespace Stockly.Services
         {
             try
             {
+                // Generate a new GUID for the product ID
+                var productId = Guid.NewGuid();
+                product.Id = productId;
+                
                 CollectionReference productsRef = _db.Collection("products");
                 var productData = new Dictionary<string, object>
                 {
@@ -284,8 +288,8 @@ namespace Stockly.Services
                     { "lastModifiedBy", createdBy }
                 };
                 
-                // Add the document to the collection (this will create the collection if it doesn't exist)
-                await productsRef.AddAsync(productData);
+                // Create the document with the generated GUID as the document ID
+                await productsRef.Document(productId.ToString()).SetAsync(productData);
                 return true;
             }
             catch (Exception)
@@ -298,7 +302,7 @@ namespace Stockly.Services
         {
             try
             {
-                DocumentReference productRef = _db.Collection("products").Document(product.Id);
+                DocumentReference productRef = _db.Collection("products").Document(product.Id.ToString());
                 
 
                 
@@ -412,7 +416,7 @@ namespace Stockly.Services
             try
             {
                 // Delete the product
-                DocumentReference productRef = _db.Collection("products").Document(product.Id);
+                DocumentReference productRef = _db.Collection("products").Document(product.Id.ToString());
                 await productRef.DeleteAsync();
 
                 // Create activity for item deletion
@@ -788,7 +792,7 @@ namespace Stockly.Services
 
     public class Product
     {
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; } = Guid.Empty;
         public string Name { get; set; } = "";
         public string Category { get; set; } = "";
         public int Stock { get; set; }

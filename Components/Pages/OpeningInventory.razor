@@ -654,7 +654,7 @@
                     OpeningAddedStock = newOpeningAddedStock
                 };
 
-                var success = await FirebaseService.UpdateProductStockAsync(originalProduct.Id, updatedStock, newOpeningAddedStock, UserState.CurrentUser?.Username ?? "");
+                var success = await FirebaseService.UpdateProductStockAsync(originalProduct.Id.ToString(), updatedStock, newOpeningAddedStock, UserState.CurrentUser?.Username ?? "");
                 if (success)
                 {
                     // Check for low stock conditions and create activities
