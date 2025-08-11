@@ -29,7 +29,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Remove HTTPS redirection for Firebase Cloud Run
+// app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
@@ -37,4 +38,6 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.Run();
+// Configure the app to listen on the PORT environment variable for Firebase Cloud Run
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Run($"http://0.0.0.0:{port}");
