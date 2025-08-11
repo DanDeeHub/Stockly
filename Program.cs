@@ -41,10 +41,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-<<<<<<< HEAD
-// Configure the app to listen on the PORT environment variable for Firebase Cloud Run
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Run($"http://0.0.0.0:{port}");
-=======
+// Add health check endpoint
+app.MapHealthChecks("/health");
+
 await app.RunAsync();
->>>>>>> d96b3c951fd3ee193f1d5cb3b71332f92e1e0e6c
