@@ -15,6 +15,9 @@ builder.Services.AddScoped<DrawerService>();
 builder.Services.AddScoped<AuthorizationService>();
 builder.Services.AddScoped<SecureStorageService>();
 
+// Add health checks
+builder.Services.AddHealthChecks();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -38,6 +41,10 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+<<<<<<< HEAD
 // Configure the app to listen on the PORT environment variable for Firebase Cloud Run
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 app.Run($"http://0.0.0.0:{port}");
+=======
+await app.RunAsync();
+>>>>>>> d96b3c951fd3ee193f1d5cb3b71332f92e1e0e6c

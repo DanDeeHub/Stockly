@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  stockly-app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    container_name: stockly-db
+    restart: unless-stopped
