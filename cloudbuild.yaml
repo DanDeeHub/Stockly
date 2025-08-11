@@ -21,6 +21,8 @@ steps:
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'ASPNETCORE_ENVIRONMENT=Production'
       - '--port'
       - '8080'
       - '--memory'
