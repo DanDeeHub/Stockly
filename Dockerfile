@@ -1,37 +1,42 @@
-# Use the official .NET 9.0 runtime image as the base image
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-WORKDIR /app
-EXPOSE 8080
+# Build Stage
+FROM mcr.microsoft.com/dotnet/nightly/sdk:9.0.303 AS build
 
-# Use the official .NET 9.0.303 SDK image for building
-FROM mcr.microsoft.com/dotnet/sdk:9.0.303 AS build
 WORKDIR /src
 
-# Copy the project file and restore dependencies
+# Copy solution & props if they exist (optional for cache optimization)
+COPY Stockly.sln .
+COPY *.props .
+
+# Copy project file and restore dependencies
 COPY ["Stockly.csproj", "./"]
 RUN dotnet restore "Stockly.csproj"
 
 # Copy the rest of the source code
 COPY . .
 
-# Build the application
+# Build application
 RUN dotnet build "Stockly.csproj" -c Release -o /app/build
 
-# Publish the application
+# Publish Stage
 FROM build AS publish
 RUN dotnet publish "Stockly.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Final stage
-FROM base AS final
+# Final Stage - Runtime only
+FROM mcr.microsoft.com/dotnet/nightly/aspnet:9.0.7 AS final
 WORKDIR /app
+
+# Copy published output
 COPY --from=publish /app/publish .
 
-# Set the PORT environment variable
+# Non-root user (matches API)
+USER 1000
+
+# Environment variables
 ENV PORT=8080
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 
 # Expose the port
 EXPOSE 8080
 
-# Start the application
+# Start the app
 ENTRYPOINT ["dotnet", "Stockly.dll"]

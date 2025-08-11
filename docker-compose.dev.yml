@@ -2,13 +2,17 @@ version: '3.8'
 
 services:
   stockly-app:
+    container_name: stockly-app
+    image: stockly-app
     build: .
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - PORT=8080
+      - ASPNETCORE_URLS=http://+:8080
     ports:
       - "8080:8080"
-    environment:
-      - PORT=8080
-      - ASPNETCORE_ENVIRONMENT=Development
-    container_name: stockly-dev
+    user: root # keep for dev volume mounts
     volumes:
-      - .:/app
+      - .:/src  # matches Dockerfile's WORKDIR for development
     restart: unless-stopped
