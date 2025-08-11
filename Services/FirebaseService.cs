@@ -18,13 +18,10 @@ namespace Stockly.Services
         {
             try
             {
-                // Use the credentials file for now (it's already in .gitignore)
-                var credentialsPath = Path.Combine(Directory.GetCurrentDirectory(), "Credentials", "Firebase", "stockly-db-firebase-adminsdk-fbsvc-0441a05a82.json");
-                
+                // Use Google Cloud's default service account authentication
                 var builder = new FirestoreDbBuilder
                 {
-                    ProjectId = "stockly-db",
-                    CredentialsPath = credentialsPath
+                    ProjectId = "stockly-db"
                 };
                 
                 _db = builder.Build();
