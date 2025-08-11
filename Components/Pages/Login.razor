@@ -20,8 +20,6 @@
                 <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" Required="true" RequiredError="Please enter your password" InputType="InputType.Password" Class="flex-grow-1" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
             </div>
             
-            <MudCheckBox T="bool" @bind-Checked="RememberMe" Label="Remember Me" Color="Color.Primary" />
-            
             @if (!string.IsNullOrEmpty(errorMessage))
             {
                 <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
@@ -63,7 +61,6 @@
     private bool isValid;
     private string[] errors = Array.Empty<string>();
     private bool isLoading = false;
-    private bool RememberMe { get; set; } = false;
     
     protected override async Task OnInitializedAsync()
     {
@@ -78,31 +75,19 @@
     {
         if (firstRender && !UserState.IsAuthenticated)
         {
-            // Try to load saved credentials after the component has rendered
+            // Try to load session data
             try
             {
-                var savedCredentials = await SecureStorage.LoadCredentialsAsync();
-                if (savedCredentials != null)
+                var sessionData = await SecureStorage.LoadSessionDataAsync();
+                if (sessionData != null)
                 {
-                    Username = savedCredentials.Username;
-                    Password = savedCredentials.Password;
-                    RememberMe = true;
+                    Username = sessionData.Username;
                     StateHasChanged();
-                }
-                else
-                {
-                    // Try to load session data
-                    var sessionData = await SecureStorage.LoadSessionDataAsync();
-                    if (sessionData != null)
-                    {
-                        Username = sessionData.Username;
-                        StateHasChanged();
-                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading saved credentials: {ex.Message}");
+                Console.WriteLine($"Error loading session data: {ex.Message}");
             }
         }
     }
@@ -128,8 +113,8 @@
             {
                 UserState.Login(user);
                 
-                // Save credentials if "Remember Me" is checked
-                await SecureStorage.SaveCredentialsAsync(user.Id, Username, Password, RememberMe);
+                // Save session data
+                await SecureStorage.SaveSessionDataAsync(user.Id, Username);
                 
                 Navigation.NavigateTo("/");
             }
