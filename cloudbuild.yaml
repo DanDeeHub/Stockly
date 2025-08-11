@@ -13,7 +13,7 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'stockly-db'
+      - 'stockly-service'
       - '--image'
       - 'gcr.io/$PROJECT_ID/stockly-db:$COMMIT_SHA'
       - '--region'
