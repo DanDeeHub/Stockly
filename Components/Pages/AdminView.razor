@@ -26,7 +26,6 @@
             <MudCardContent Class="pa-2 pa-sm-4">
                 <div class="d-flex gap-2 align-center" style="align-items: center;">
                     <MudTextField @bind-Value="_searchString" Placeholder="Search products or categories..." Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Style="height: 40px; flex: 1; min-height: 40px; max-height: 40px; line-height: 40px;" />
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.DateRange" Size="Size.Small" Style="height: 40px; min-width: 140px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="OpenDateRangeModal">Date Range</MudButton>
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Style="height: 40px; width: 40px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="RefreshData" title="Refresh data" Color="Color.Primary" Variant="Variant.Outlined"></MudIconButton>
                     <MudIconButton Icon="@Icons.Material.Filled.Clear" Size="Size.Small" Style="height: 40px; width: 40px; min-height: 40px; max-height: 40px; line-height: 40px;" OnClick="ClearAllFilters" title="Clear all filters" Color="Color.Secondary" Variant="Variant.Outlined"></MudIconButton>
                 </div>
@@ -39,7 +38,7 @@
             <MudCard Elevation="0">
                 <MudCardContent Class="pa-4 text-center">
                     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                                         <MudText Class="mt-2">Loading today's Opening Inventory changes...</MudText>
+                                         <MudText Class="mt-2">Loading products...</MudText>
                 </MudCardContent>
             </MudCard>
         }
@@ -93,24 +92,10 @@
                                                  <div class="text-center pa-4">
                              <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" />
                                                                                           <MudText Typo="Typo.h6" Class="mt-2">
-                                   @if (_startDate.HasValue || _endDate.HasValue)
-                                   {
-                                       <span>No Inventory changes in selected date range</span>
-                                   }
-                                   else
-                                   {
-                                       <span>No Inventory changes today</span>
-                                   }
+                                       <span>No products found</span>
                                </MudText>
                                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                   @if (_startDate.HasValue || _endDate.HasValue)
-                                   {
-                                       <span>This view shows products that have been modified through Opening Inventory in the selected date range</span>
-                                   }
-                                   else
-                                   {
-                                       <span>This view only shows products that have been modified through Opening Inventory today</span>
-                                   }
+                                       <span>No products match your current search criteria</span>
                                </MudText>
                          </div>
                     }
@@ -118,71 +103,6 @@
             </MudCard>
         }
     </div>
-
-    <!-- Date Range Filter Modal -->
-    @if (_isDateRangeModalOpen)
-    {
-        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000">
-            <MudCard Style="width: 95%; max-width: 500px; height: 85vh; margin: 0 auto; display: flex; flex-direction: column;" Class="pa-2 pa-sm-4">
-                <MudCardHeader Style="position: relative; flex-shrink: 0;" Class="pa-2 pa-sm-4">
-                    <MudText Typo="Typo.h6">Filter by Date Range</MudText>
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
-                                  OnClick="CloseDateRangeModal" 
-                                  Size="Size.Small" 
-                                  Color="Color.Inherit"
-                                  Style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%);" />
-                </MudCardHeader>
-                
-                <MudCardContent Class="pa-2 pa-sm-4" Style="flex: 1; overflow-y: auto;">
-                    <MudGrid>
-                        <MudItem xs="12">
-                            <MudText Typo="Typo.subtitle1" Class="mb-2">Select Date Range</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-                                Filter products that were modified within the selected date range
-                            </MudText>
-                        </MudItem>
-                        
-                                                 <MudItem xs="12" sm="6">
-                             <MudDatePicker @bind-Date="_tempStartDate" 
-                                            Label="Start Date" 
-                                            Variant="Variant.Outlined" 
-                                            DateFormat="MM/dd/yyyy"
-                                            PickerVariant="PickerVariant.Dialog" />
-                         </MudItem>
-                         
-                         <MudItem xs="12" sm="6">
-                             <MudDatePicker @bind-Date="_tempEndDate" 
-                                            Label="End Date" 
-                                            Variant="Variant.Outlined" 
-                                            DateFormat="MM/dd/yyyy"
-                                            PickerVariant="PickerVariant.Dialog" />
-                         </MudItem>
-                        
-                                                 <MudItem xs="12">
-                             <MudButton Variant="Variant.Text" 
-                                       Color="Color.Primary" 
-                                       OnClick="ClearDateRange" 
-                                       StartIcon="@Icons.Material.Filled.Clear">
-                                 Clear Date Range
-                             </MudButton>
-                         </MudItem>
-                        
-                        @if (!string.IsNullOrEmpty(_dateRangeErrorMessage))
-                        {
-                            <MudItem xs="12">
-                                <MudAlert Severity="Severity.Error" Class="mt-2">@_dateRangeErrorMessage</MudAlert>
-                            </MudItem>
-                        }
-                    </MudGrid>
-                </MudCardContent>
-                
-                <MudCardActions Class="justify-start pa-2 pa-sm-4" Style="flex-shrink: 0;">
-                    <MudButton OnClick="CloseDateRangeModal" Variant="Variant.Text" Elevation="0" Class="mr-2">Cancel</MudButton>
-                    <MudButton OnClick="ApplyDateRangeFilter" Variant="Variant.Filled" Color="Color.Primary" Elevation="0">Apply Filter</MudButton>
-                </MudCardActions>
-            </MudCard>
-        </MudOverlay>
-    }
 
     <!-- Create Reminder Modal -->
     @if (_isCreateReminderModalOpen)
@@ -356,16 +276,6 @@
     private List<Product> _products = [];
     private string _sortOrder = "name_asc";
     private string _selectedCategory = "";
-    
-
-    
-    // Date range filter variables
-    private bool _isDateRangeModalOpen = false;
-    private DateTime? _startDate = null;
-    private DateTime? _endDate = null;
-    private DateTime? _tempStartDate = null;
-    private DateTime? _tempEndDate = null;
-    private string _dateRangeErrorMessage = "";
 
     private void OpenCreateUserModal()
     {
@@ -379,85 +289,6 @@
         _isCreateUserModalOpen = false;
         _newUser = new NewUser();
         errorMessage = string.Empty;
-    }
-
-    // Date range filter methods
-    private void OpenDateRangeModal()
-    {
-        _tempStartDate = _startDate;
-        _tempEndDate = _endDate;
-        _dateRangeErrorMessage = "";
-        _isDateRangeModalOpen = true;
-    }
-
-    private void CloseDateRangeModal()
-    {
-        _isDateRangeModalOpen = false;
-        _dateRangeErrorMessage = "";
-    }
-
-    private void ClearDateRange()
-    {
-        _tempStartDate = null;
-        _tempEndDate = null;
-        _dateRangeErrorMessage = "";
-    }
-
-    private void ApplyDateRangeFilter()
-    {
-        // Check if no dates are selected at all
-        if (!_tempStartDate.HasValue && !_tempEndDate.HasValue)
-        {
-            Snackbar.Add("Please select date range", Severity.Warning);
-            return;
-        }
-
-        // Check if only end date is selected without start date
-        if (!_tempStartDate.HasValue && _tempEndDate.HasValue)
-        {
-            Snackbar.Add("Please enter date start", Severity.Warning);
-            return;
-        }
-
-        // Check if only start date is selected without end date
-        if (_tempStartDate.HasValue && !_tempEndDate.HasValue)
-        {
-            Snackbar.Add("Please select date end", Severity.Warning);
-            return;
-        }
-
-        // Validate date range
-        if (_tempStartDate.HasValue && _tempEndDate.HasValue && _tempStartDate > _tempEndDate)
-        {
-            _dateRangeErrorMessage = "Start date cannot be after end date";
-            return;
-        }
-
-        _startDate = _tempStartDate;
-        _endDate = _tempEndDate;
-        _dateRangeErrorMessage = "";
-        
-        string dateRangeText = "";
-        if (_startDate.HasValue && _endDate.HasValue)
-        {
-            dateRangeText = $" from {_startDate.Value:MM/dd/yyyy} to {_endDate.Value:MM/dd/yyyy}";
-        }
-        else if (_startDate.HasValue)
-        {
-            dateRangeText = $" from {_startDate.Value:MM/dd/yyyy}";
-        }
-        else if (_endDate.HasValue)
-        {
-            dateRangeText = $" until {_endDate.Value:MM/dd/yyyy}";
-        }
-        
-        CloseDateRangeModal();
-        
-        // Show how many products are being filtered
-        var filteredCount = FilteredProducts.Count;
-        ShowCenteredNotification($"Filter Applied, showing {filteredCount} products", Severity.Success);
-        
-
     }
 
     private async Task CreateUser()
@@ -629,71 +460,18 @@
     {
         get
         {
-            // Get today's date in Philippine timezone
-            var today = DateTime.UtcNow.AddHours(8).Date;
-            
-            // Start with all products that have been modified through Opening Inventory OR Products page (stock updates)
-            // Show products that have OpeningAddedStock > 0 (Add Stock) OR OpeningInventoryQuantity > 0 (Set Inventory) OR TodayAddedStock != 0 (Products page updates)
-            var openingModifiedProducts = _products.Where(product => 
-                (product.OpeningAddedStock > 0 || product.OpeningInventoryQuantity > 0 || product.TodayAddedStock != 0) && // Products modified through Opening Inventory or Products page
-                product.LastUpdated.HasValue &&
+            // Show all products with search and category filtering
+            var allProducts = _products.Where(product => 
                 (string.IsNullOrEmpty(_searchString) || 
                  product.Name.ToLower().Contains(_searchString.ToLower()) ||
                  product.Category.ToLower().Contains(_searchString.ToLower())) &&
                 (string.IsNullOrEmpty(_selectedCategory) || product.Category == _selectedCategory));
 
-            // Apply date filtering
-            if (_startDate.HasValue || _endDate.HasValue)
-            {
-                // If user has set custom date range, use that instead of today's filter
-                openingModifiedProducts = openingModifiedProducts.Where(product =>
-                {
-                    if (product.LastUpdated == null) return false;
-                    
-                    var productDate = product.LastUpdated.Value.Date; // Ensure we're comparing dates only
-                    
-                    // Debug: Log the dates being compared
-                    Console.WriteLine($"Product: {product.Name}, ProductDate: {productDate:yyyy-MM-dd}, StartDate: {_startDate?.Date:yyyy-MM-dd}, EndDate: {_endDate?.Date:yyyy-MM-dd}");
-                    
-                    // If only start date is set, filter products modified on or after start date
-                    if (_startDate.HasValue && !_endDate.HasValue)
-                    {
-                        var result = productDate >= _startDate.Value.Date;
-                        Console.WriteLine($"  Start date only filter: {result}");
-                        return result;
-                    }
-                    
-                    // If only end date is set, filter products modified on or before end date
-                    if (!_startDate.HasValue && _endDate.HasValue)
-                    {
-                        var result = productDate <= _endDate.Value.Date;
-                        Console.WriteLine($"  End date only filter: {result}");
-                        return result;
-                    }
-                    
-                    // If both dates are set, filter products modified between start and end date (inclusive)
-                    if (_startDate.HasValue && _endDate.HasValue)
-                    {
-                        var result = productDate >= _startDate.Value.Date && productDate <= _endDate.Value.Date;
-                        Console.WriteLine($"  Both dates filter: {result}");
-                        return result;
-                    }
-                    
-                    return true;
-                });
-            }
-            else
-            {
-                // If no custom date range is set, default to today's changes only
-                openingModifiedProducts = openingModifiedProducts.Where(product => 
-                    product.LastUpdated.Value.Date == today);
-            }
-
             return _sortOrder switch
             {
-                "name_asc" => openingModifiedProducts.OrderBy(p => p.Name).ToList(),
-                "name_desc" => openingModifiedProducts.OrderByDescending(p => p.Name).ToList(),
-                _ => openingModifiedProducts.OrderBy(p => p.Name).ToList()
+                "name_asc" => allProducts.OrderBy(p => p.Name).ToList(),
+                "name_desc" => allProducts.OrderByDescending(p => p.Name).ToList(),
+                _ => allProducts.OrderBy(p => p.Name).ToList()
             };
         }
     }
@@ -726,8 +504,6 @@
         _searchString = "";
         _selectedCategory = "";
         _sortOrder = "name_asc";
-        _startDate = null;
-        _endDate = null;
         
         ShowCenteredNotification("All filters cleared", Severity.Info);
         StateHasChanged();
