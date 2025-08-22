@@ -18,11 +18,23 @@ namespace Stockly.Services
         {
             try
             {
-                // Use Google Cloud's default service account authentication
                 var builder = new FirestoreDbBuilder
                 {
                     ProjectId = "stockly-db"
                 };
+
+                // Check if we're running in development and use local credentials
+                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+                if (environment == "Development")
+                {
+                    // Use local Firebase service account credentials
+                    var credentialsPath = Path.Combine(Directory.GetCurrentDirectory(), "Credentials", "Firebase", "stockly-db-firebase-adminsdk-fbsvc-0441a05a82.json");
+                    if (File.Exists(credentialsPath))
+                    {
+                        builder.CredentialsPath = credentialsPath;
+                    }
+                }
+                // In production, it will use Google Cloud's default service account authentication
                 
                 _db = builder.Build();
             }
